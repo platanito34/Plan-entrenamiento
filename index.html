@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Generador de Plan de Entrenamiento</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <header class="app-header">
+    <nav class="progress-nav" aria-label="Progreso">
+
+      <div class="progress-step" data-step="1">
+        <div class="progress-step-circle">1</div>
+        <span class="progress-step-label">Objetivo</span>
+      </div>
+
+      <div class="progress-connector" data-after="1"></div>
+
+      <div class="progress-step" data-step="2">
+        <div class="progress-step-circle">2</div>
+        <span class="progress-step-label">Días</span>
+      </div>
+
+      <div class="progress-connector" data-after="2"></div>
+
+      <div class="progress-step" data-step="3">
+        <div class="progress-step-circle">3</div>
+        <span class="progress-step-label">Ejercicios</span>
+      </div>
+
+      <div class="progress-connector" data-after="3"></div>
+
+      <div class="progress-step" data-step="4">
+        <div class="progress-step-circle">4</div>
+        <span class="progress-step-label">Plan</span>
+      </div>
+
+    </nav>
+  </header>
+
+  <main class="app-main" id="app"></main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- ES modules require an HTTP server (e.g. VS Code Live Server) -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
