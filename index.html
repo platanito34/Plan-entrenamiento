@@ -8,6 +8,100 @@
 </head>
 <body>
 
+  <!-- ── Hamburger button ──────────────────────────────────────────────────── -->
+  <button id="hamburger-btn" class="hamburger-btn" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="side-nav">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+         stroke-linecap="round" aria-hidden="true">
+      <line x1="3" y1="6"  x2="21" y2="6"/>
+      <line x1="3" y1="12" x2="21" y2="12"/>
+      <line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  </button>
+
+  <!-- ── Side nav overlay ──────────────────────────────────────────────────── -->
+  <div id="side-nav-overlay" class="side-nav-overlay" aria-hidden="true"></div>
+
+  <!-- ── Side nav drawer ───────────────────────────────────────────────────── -->
+  <nav id="side-nav" class="side-nav" aria-label="Navegación principal">
+    <div class="side-nav-header">
+      <div class="side-nav-profile">
+        <div class="side-nav-avatar" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+          </svg>
+        </div>
+        <div>
+          <p class="side-nav-profile-name">Mi perfil</p>
+          <p class="side-nav-streak" id="side-nav-streak" hidden></p>
+        </div>
+      </div>
+      <button id="side-nav-close" class="side-nav-close" type="button" aria-label="Cerrar menú">✕</button>
+    </div>
+
+    <ul class="side-nav-list">
+      <li>
+        <button class="side-nav-item active" data-page="planner" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="2" y="9" width="3" height="6" rx="1"/><rect x="19" y="9" width="3" height="6" rx="1"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <rect x="4" y="7" width="2" height="10" rx="1"/><rect x="18" y="7" width="2" height="10" rx="1"/>
+          </svg>
+          <span>Crear plan</span>
+        </button>
+      </li>
+      <li>
+        <button class="side-nav-item" data-page="my-plans" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+          <span>Mis planes</span>
+        </button>
+      </li>
+      <li>
+        <button class="side-nav-item" data-page="history" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="18" rx="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+            <circle cx="8"  cy="15" r="1" fill="currentColor"/>
+            <circle cx="12" cy="15" r="1" fill="currentColor"/>
+            <circle cx="16" cy="15" r="1" fill="currentColor"/>
+          </svg>
+          <span>Historial</span>
+        </button>
+      </li>
+      <li>
+        <button class="side-nav-item" data-page="exercises" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="6" y1="12" x2="18" y2="12"/>
+            <rect x="2" y="10" width="4" height="4" rx="1"/>
+            <rect x="18" y="10" width="4" height="4" rx="1"/>
+            <rect x="1" y="8" width="2" height="8" rx="1"/>
+            <rect x="21" y="8" width="2" height="8" rx="1"/>
+          </svg>
+          <span>Ejercicios</span>
+        </button>
+      </li>
+      <li>
+        <button class="side-nav-item" data-page="progress" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          <span>Mi progreso</span>
+        </button>
+      </li>
+    </ul>
+  </nav>
+
   <header class="app-header">
     <nav class="progress-nav" aria-label="Progreso">
 

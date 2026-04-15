@@ -1,0 +1,305 @@
+// ── Mis planes page ────────────────────────────────────────────────────────────
+import { goToPage }                              from './router.js';
+import { saveSession, loadHistory }              from './history.js';
+import { checkAchievements, refreshSideNavStreak } from './achievements.js';
+
+const PLANS_KEY    = 'gym-plans';
+const MIGRATED_KEY = '_gym_migrated';
+
+// ── Storage helpers ────────────────────────────────────────────────────────────
+export function loadPlans() {
+  try {
+    const raw   = localStorage.getItem(PLANS_KEY);
+    const plans = raw ? JSON.parse(raw) : [];
+    migrateOld(plans);
+    return Array.isArray(plans) ? plans : [];
+  } catch {
+    return [];
+  }
+}
+
+function migrateOld(plans) {
+  if (localStorage.getItem(MIGRATED_KEY)) return;
+  try {
+    const old = localStorage.getItem('gym-plan');
+    if (old) {
+      const parsed = JSON.parse(old);
+      if (parsed?.goal && !plans.some(p => p.id === 'v1')) {
+        const LABELS = { muscle: 'Ganar músculo', fat: 'Perder grasa', strength: 'Fuerza máxima' };
+        plans.unshift({
+          ...parsed,
+          id:   'v1',
+          name: `${LABELS[parsed.goal] ?? parsed.goal} · ${parsed.days} días`,
+        });
+        localStorage.setItem(PLANS_KEY, JSON.stringify(plans));
+      }
+    }
+  } catch { /* ignore malformed data */ }
+  localStorage.setItem(MIGRATED_KEY, '1');
+}
+
+export function savePlan(plan) {
+  const plans = loadPlans();
+  plans.unshift(plan);
+  localStorage.setItem(PLANS_KEY, JSON.stringify(plans));
+}
+
+export function deletePlan(id) {
+  localStorage.setItem(PLANS_KEY, JSON.stringify(loadPlans().filter(p => p.id !== id)));
+}
+
+export function updatePlan(updatedPlan) {
+  const plans = loadPlans();
+  const idx   = plans.findIndex(p => p.id === updatedPlan.id);
+  if (idx !== -1) {
+    plans[idx] = updatedPlan;
+    localStorage.setItem(PLANS_KEY, JSON.stringify(plans));
+  }
+}
+
+// ── Last-session helpers ───────────────────────────────────────────────────────
+function getLastSession(planId, planName) {
+  const history = loadHistory();
+  return history.find(s => s.planId === planId || s.planName === planName) ?? null;
+}
+
+function daysAgo(isoDate) {
+  const diff = Math.floor((Date.now() - new Date(isoDate)) / 86400000);
+  if (diff === 0) return 'hoy';
+  if (diff === 1) return 'ayer';
+  return `hace ${diff} días`;
+}
+
+// ── Smooth panel toggle (used for quick-log panel) ────────────────────────────
+function togglePanel(el, open) {
+  if (open === el.classList.contains('open')) return;
+  if (open) {
+    el.classList.add('open');
+    el.style.height   = '0';
+    el.style.overflow = 'hidden';
+    void el.offsetHeight;
+    el.style.transition = 'height 0.22s ease';
+    el.style.height     = el.scrollHeight + 'px';
+    el.addEventListener('transitionend', () => {
+      el.style.height = 'auto'; el.style.overflow = ''; el.style.transition = '';
+    }, { once: true });
+  } else {
+    el.style.height   = el.getBoundingClientRect().height + 'px';
+    el.style.overflow = 'hidden';
+    void el.offsetHeight;
+    el.style.transition = 'height 0.22s ease';
+    el.style.height     = '0';
+    el.addEventListener('transitionend', () => {
+      el.style.height = ''; el.style.overflow = ''; el.style.transition = '';
+      el.classList.remove('open');
+    }, { once: true });
+  }
+}
+
+// ── Page renderer ──────────────────────────────────────────────────────────────
+export function renderPlansPage() {
+  const app   = document.getElementById('app');
+  const plans = loadPlans();
+
+  if (plans.length === 0) {
+    app.innerHTML = `
+      <div class="view-wrapper">
+        <div class="view-header">
+          <h2 class="view-title">Mis planes</h2>
+        </div>
+        <div class="plans-empty">
+          <div class="plans-empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="3"/>
+              <line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/>
+              <line x1="8" y1="16" x2="12" y2="16"/>
+            </svg>
+          </div>
+          <p class="plans-empty-title">Sin planes guardados</p>
+          <p class="plans-empty-text">Crea tu primer plan de entrenamiento semanal.</p>
+          <button class="btn btn-primary" id="btn-go-create" type="button">Crear plan</button>
+        </div>
+      </div>`;
+    document.getElementById('btn-go-create').addEventListener('click', () => goToPage('planner'));
+    return;
+  }
+
+  const cardsHtml = plans.map((plan, i) => {
+    const daysHtml = plan.plan.map(d => `
+      <li class="myplan-day">
+        <span class="myplan-day-letter">${d.letter}</span>
+        <span class="myplan-day-label">${d.label}</span>
+      </li>`).join('');
+
+    const lastSession  = getLastSession(plan.id, plan.name);
+    const lastSessHtml = lastSession
+      ? `<p class="myplan-last-session">Último entreno: ${lastSession.dayLabel} · ${daysAgo(lastSession.date)}</p>`
+      : '';
+
+    // Quick log day options
+    const dayOptions = plan.plan.map(d =>
+      `<option value="${d.label}">${d.letter} · ${d.label}</option>`
+    ).join('');
+
+    return `
+      <div class="myplan-card stagger-item" style="animation-delay:${i * 60}ms">
+        <div class="myplan-header">
+          <p class="myplan-name">${plan.name}</p>
+          <p class="myplan-date">${formatDate(plan.generatedAt)}</p>
+        </div>
+        <ul class="myplan-days">${daysHtml}</ul>
+        ${lastSessHtml}
+        <div class="myplan-actions">
+          <button class="btn btn-primary" data-action="start"   data-id="${plan.id}" type="button">Empezar sesión</button>
+          <button class="btn btn-ghost btn-sm" data-action="weights" data-id="${plan.id}" type="button">Pesos</button>
+          <button class="btn btn-ghost btn-sm" data-action="edit"    data-id="${plan.id}" type="button">Editar</button>
+          <button class="btn btn-ghost btn-sm" data-action="delete"  data-id="${plan.id}" type="button">Eliminar</button>
+        </div>
+        <button class="myplan-quick-log-btn" data-action="quick-log" data-id="${plan.id}" type="button">
+          + Registrar sesión rápida
+        </button>
+        <div class="quick-log-panel" id="ql-${plan.id}">
+          <div class="quick-log-inner">
+            <h4 class="quick-log-title">Registrar sesión</h4>
+            <div class="quick-log-field">
+              <label class="quick-log-label" for="ql-day-${plan.id}">Día del plan</label>
+              <select class="quick-log-select" id="ql-day-${plan.id}">${dayOptions}</select>
+            </div>
+            <div class="quick-log-field">
+              <label class="quick-log-label" for="ql-dur-${plan.id}">
+                Duración <span class="quick-log-optional">(min, opcional)</span>
+              </label>
+              <input type="number" class="quick-log-input" id="ql-dur-${plan.id}"
+                     placeholder="45" min="1" max="300" inputmode="numeric">
+            </div>
+            <div class="quick-log-field">
+              <label class="quick-log-label" for="ql-notes-${plan.id}">
+                Notas <span class="quick-log-optional">(opcional)</span>
+              </label>
+              <textarea class="quick-log-textarea" id="ql-notes-${plan.id}"
+                        maxlength="200" placeholder="¿Cómo fue el entrenamiento?"></textarea>
+              <span class="quick-log-char-count" id="ql-cc-${plan.id}">0 / 200</span>
+            </div>
+            <div class="quick-log-actions">
+              <button class="btn btn-ghost btn-sm" data-action="ql-cancel" data-id="${plan.id}" type="button">Cancelar</button>
+              <button class="btn btn-primary btn-sm" data-action="ql-save" data-id="${plan.id}" type="button">Guardar sesión</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  app.innerHTML = `
+    <div class="view-wrapper">
+      <div class="view-header">
+        <h2 class="view-title">Mis planes</h2>
+        <p class="view-subtitle">${plans.length} plan${plans.length !== 1 ? 'es' : ''} guardado${plans.length !== 1 ? 's' : ''}</p>
+      </div>
+      <div class="myplans-list">${cardsHtml}</div>
+    </div>`;
+
+  // ── Action listeners ───────────────────────────────────────────────────────
+  app.querySelectorAll('[data-action="start"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const plan = plans.find(p => p.id === btn.dataset.id);
+      if (plan) goToPage('session', plan);
+    });
+  });
+
+  app.querySelectorAll('[data-action="weights"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const plan = plans.find(p => p.id === btn.dataset.id);
+      if (plan) goToPage('plan-weights', plan);
+    });
+  });
+
+  app.querySelectorAll('[data-action="edit"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const plan = plans.find(p => p.id === btn.dataset.id);
+      if (plan) goToPage('edit-plan', plan);
+    });
+  });
+
+  app.querySelectorAll('[data-action="delete"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (confirm('¿Eliminar este plan? Esta acción no se puede deshacer.')) {
+        deletePlan(btn.dataset.id);
+        renderPlansPage();
+      }
+    });
+  });
+
+  // ── Quick log listeners ────────────────────────────────────────────────────
+  app.querySelectorAll('[data-action="quick-log"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const panel = document.getElementById(`ql-${btn.dataset.id}`);
+      if (panel) togglePanel(panel, !panel.classList.contains('open'));
+    });
+  });
+
+  app.querySelectorAll('[data-action="ql-cancel"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const panel = document.getElementById(`ql-${btn.dataset.id}`);
+      if (panel) togglePanel(panel, false);
+    });
+  });
+
+  // Char counter for notes textarea
+  plans.forEach(plan => {
+    const ta = document.getElementById(`ql-notes-${plan.id}`);
+    const cc = document.getElementById(`ql-cc-${plan.id}`);
+    if (ta && cc) {
+      ta.addEventListener('input', () => {
+        cc.textContent = `${ta.value.length} / 200`;
+      });
+    }
+  });
+
+  app.querySelectorAll('[data-action="ql-save"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id    = btn.dataset.id;
+      const plan  = plans.find(p => p.id === id);
+      if (!plan) return;
+
+      const dayLabel = document.getElementById(`ql-day-${id}`)?.value ?? plan.plan[0]?.label ?? '';
+      const durVal   = document.getElementById(`ql-dur-${id}`)?.value;
+      const notes    = document.getElementById(`ql-notes-${id}`)?.value?.trim() ?? '';
+
+      const durSec = durVal ? Math.round(parseFloat(durVal) * 60) : 0;
+
+      // Derive muscles from selected day
+      const day     = plan.plan.find(d => d.label === dayLabel);
+      const muscles = day ? day.sections.map(s => s.muscleLabel) : [];
+
+      saveSession({
+        date:        new Date().toISOString(),
+        planId:      plan.id,
+        planName:    plan.name,
+        dayLabel,
+        muscles,
+        durationSec: durSec,
+        completed:   0,
+        deferred:    0,
+        notes:       notes || undefined,
+        quickLog:    true,
+      });
+      checkAchievements();
+      refreshSideNavStreak();
+
+      const panel = document.getElementById(`ql-${id}`);
+      if (panel) togglePanel(panel, false);
+
+      // Refresh cards to show updated "último entreno"
+      renderPlansPage();
+
+      // Show toast (dispatched to app.js via custom event)
+      document.dispatchEvent(new CustomEvent('show-toast', { detail: '✓ Sesión guardada' }));
+    });
+  });
+}
+
+function formatDate(iso) {
+  try {
+    return new Date(iso).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch { return ''; }
+}
