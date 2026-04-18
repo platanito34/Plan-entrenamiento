@@ -2568,6 +2568,419 @@ ul     { list-style: none; }
   line-height: 1.6;
 }
 
+/* ── Exercise: name row (name + Personal badge) ──────────────────────────────── */
+.ex-item-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.ex-item-name-row .ex-item-name {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Exercise: initials placeholder for custom exercises ─────────────────────── */
+.ex-thumb-initials {
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.03em;
+  border: 1px solid rgba(249, 115, 22, 0.3);
+}
+
+/* ── Exercise: Personal badge ────────────────────────────────────────────────── */
+.badge-personal {
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--r-full);
+  padding: 0.15rem 0.5rem;
+  line-height: 1.4;
+}
+
+/* ── Exercise: history list inside expanded panel ────────────────────────────── */
+.ex-hist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ── Exercise: inline weight editor bar ─────────────────────────────────────── */
+.ex-weight-editor-bar {
+  padding: 0.65rem 0 0.6rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.4rem;
+}
+
+.ex-wbar-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.ex-wbar-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 110px;
+}
+
+.ex-wbar-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+}
+
+.ex-wbar-display {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.ex-wbar-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.ex-wbar-value-max {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.ex-wbar-edit-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  padding: 0.18rem 0.38rem;
+  line-height: 1.4;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.ex-wbar-edit-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ex-wbar-editor {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.ex-wbar-input {
+  width: 76px;
+  background: var(--surface-2);
+  border: 1px solid var(--accent);
+  border-radius: var(--r-md);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 0.28rem 0.5rem;
+  text-align: center;
+}
+
+.ex-wbar-input:focus { outline: none; }
+
+.ex-wbar-unit {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-left: -0.15rem;
+}
+
+/* ── Exercise: notes section ─────────────────────────────────────────────────── */
+.ex-note-section {
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ex-note-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ex-note-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ex-note-counter {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+.ex-note-textarea {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  padding: 0.55rem 0.65rem;
+  resize: vertical;
+  min-height: 72px;
+  transition: border-color 0.15s;
+}
+
+.ex-note-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.ex-note-textarea::placeholder { color: var(--text-dim); }
+
+.ex-note-save {
+  align-self: flex-end;
+}
+
+/* ── Exercise: custom actions (edit / delete) ────────────────────────────────── */
+.ex-custom-actions {
+  display: flex;
+  gap: 0.5rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.65rem;
+  margin-top: 0.25rem;
+}
+
+.ex-delete-btn:hover {
+  color: #ef4444 !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+}
+
+/* ── Exercise: FAB ───────────────────────────────────────────────────────────── */
+.ex-fab {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  font-size: 1.6rem;
+  font-weight: 300;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.45);
+  z-index: 150;
+  transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+
+.ex-fab:hover {
+  background: var(--accent-hover);
+  transform: scale(1.07);
+  box-shadow: 0 6px 20px rgba(249, 115, 22, 0.55);
+}
+
+/* ── Exercise: create/edit panel overlay ────────────────────────────────────── */
+.ex-panel-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.ex-panel-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ── Exercise: create/edit bottom sheet ──────────────────────────────────────── */
+.ex-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-width: 680px;
+  margin: 0 auto;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-radius: 1.2rem 1.2rem 0 0;
+  z-index: 210;
+  max-height: 92svh;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.ex-panel.open { transform: translateY(0); }
+
+.ex-panel-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--border);
+  border-radius: var(--r-full);
+  margin: 0.65rem auto 0;
+  flex-shrink: 0;
+}
+
+.ex-panel-scroll {
+  overflow-y: auto;
+  padding: 0 1.1rem 2rem;
+  flex: 1;
+}
+
+.ex-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 0 0.75rem;
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 1;
+}
+
+.ex-panel-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.ex-panel-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.ex-panel-close:hover { background: var(--surface-2); color: var(--text); }
+
+/* ── Exercise form fields ────────────────────────────────────────────────────── */
+#ex-create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-bottom: 0.5rem;
+}
+
+.ex-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.ex-form-label {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.ex-form-required { color: var(--accent); margin-left: 0.1rem; }
+.ex-form-optional { color: var(--text-dim); font-weight: 400; font-size: 0.78rem; }
+
+.ex-form-input {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 0.6rem 0.75rem;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+
+.ex-form-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.ex-form-input::placeholder { color: var(--text-dim); }
+
+select.ex-form-input { appearance: none; cursor: pointer; }
+
+.ex-form-textarea {
+  min-height: 76px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.ex-form-counter-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ex-form-counter {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+.ex-form-error {
+  font-size: 0.78rem;
+  color: #ef4444;
+  display: none;
+}
+
+.ex-form-error.visible { display: block; }
+
+/* ── Session: note banner ────────────────────────────────────────────────────── */
+.session-note-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  background: rgba(249, 115, 22, 0.12);
+  border: 1px solid rgba(249, 115, 22, 0.3);
+  border-radius: var(--r-md);
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.session-note-icon {
+  flex-shrink: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.session-note-text {
+  font-size: 0.85rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+
 /* ── Quick session log panel ─────────────────────────────────────────────────── */
 .myplan-last-session {
   font-size: 0.74rem;

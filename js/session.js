@@ -130,6 +130,14 @@ function renderExercise() {
        </div>`
     : '';
 
+  const exNote     = getExerciseData(ex.id ?? ex.name)?.note ?? '';
+  const noteBanner = exNote
+    ? `<div class="session-note-banner">
+         <span class="session-note-icon">📝</span>
+         <span class="session-note-text">${exNote.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span>
+       </div>`
+    : '';
+
   const wLabel = ex._sessionWeight !== null ? `${ex._sessionWeight} kg` : '—';
 
   const rowsHtml = ex._setsLog.map((row, i) => `
@@ -163,6 +171,8 @@ function renderExercise() {
           <span class="scheme-sep">·</span>
           <span class="scheme-item scheme-rest">${scheme.rest} descanso</span>
         </div>
+
+        ${noteBanner}
 
         <div class="session-weight-bar">
           <div class="session-weight-info">

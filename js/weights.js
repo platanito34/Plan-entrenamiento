@@ -52,3 +52,17 @@ export function setWorkingWeight(exerciseId, weight, isoDate) {
   saveWeights(all);
   return entry;
 }
+
+export function setExerciseNote(exerciseId, note) {
+  const all   = loadWeights();
+  const entry = all[exerciseId] ?? {
+    workingWeight: 0,
+    maxWeight:     0,
+    maxDate:       null,
+    lastUpdated:   null,
+    history:       [],
+  };
+  entry.note      = note;
+  all[exerciseId] = entry;
+  saveWeights(all);
+}

@@ -8,6 +8,7 @@ import { loadWeights, setWorkingWeight } from './weights.js';
 import { renderExercisesPage }                          from './exercises.js';
 import { renderProgressPage }                           from './progress.js';
 import { checkAchievements, refreshSideNavStreak }      from './achievements.js';
+import { loadCustomExercises }                          from './customExercises.js';
 
 // ── DOM references ─────────────────────────────────────────────────────────────
 const app   = document.getElementById('app');
@@ -243,7 +244,7 @@ function buildExerciseRowHtml(muscleId, ex, goalId) {
           <span class="exercise-name-text">${ex.name}</span>
           ${hasCustom ? '<span class="scheme-custom-dot" title="Personalizado" aria-label="Personalizado"></span>' : ''}
         </label>
-        ${isRec ? '<span class="badge-rec">Recomendado</span>' : ''}
+        ${ex.isCustom ? '<span class="badge-personal">Personal</span>' : isRec ? '<span class="badge-rec">Recomendado</span>' : ''}
         <button class="exercise-edit-btn" data-edit-toggle="${muscleId}:${ex.id}"
                 type="button" title="Editar series y repeticiones" aria-label="Editar">✏</button>
         <button class="exercise-details-btn" data-row="${muscleId}-${ex.id}" type="button">
@@ -278,7 +279,7 @@ function buildExerciseRowHtml(muscleId, ex, goalId) {
       <div class="exercise-details" id="details-${muscleId}-${ex.id}">
         <div class="exercise-images-container loading"
              id="imgs-${muscleId}-${ex.id}"
-             data-img0="${ex.images[0]}"
+             data-img0="${ex.images[0] ?? ''}"
              data-img1="${ex.images[1] ?? ''}"
              data-name="${ex.name}">
           <span class="gif-loading-text">Cargando...</span>
@@ -299,12 +300,15 @@ function buildExerciseRowHtml(muscleId, ex, goalId) {
 function buildAccordionHtml() {
   const goalId          = state.goal;
   const relevantMuscles = getRelevantMuscles();
+  const customAll       = loadCustomExercises();
 
   return Object.entries(MUSCLE_GROUPS).map(([groupId, group]) => {
-    const isRelevant = relevantMuscles.has(groupId);
-    const count      = state.countSelected(groupId);
-    const total      = group.exercises.length;
-    const exHtml     = group.exercises.map(ex => buildExerciseRowHtml(groupId, ex, goalId)).join('');
+    const isRelevant    = relevantMuscles.has(groupId);
+    const customForGroup = customAll.filter(ce => ce.muscleId === groupId);
+    const allExercises  = [...group.exercises, ...customForGroup];
+    const count         = state.countSelected(groupId);
+    const total         = allExercises.length;
+    const exHtml        = allExercises.map(ex => buildExerciseRowHtml(groupId, ex, goalId)).join('');
 
     return `
       <div class="accordion-group" data-group="${groupId}">
@@ -368,7 +372,8 @@ function attachAccordionListeners(container) {
       state.toggle(muscleId, exId);
 
       const count = state.countSelected(muscleId);
-      const total = MUSCLE_GROUPS[muscleId].exercises.length;
+      const total = (MUSCLE_GROUPS[muscleId]?.exercises.length ?? 0)
+                  + loadCustomExercises().filter(ce => ce.muscleId === muscleId).length;
       document.getElementById(`count-${muscleId}`).textContent = `${count}/${total}`;
 
       if (count > 0) {
@@ -444,7 +449,8 @@ function attachAccordionListeners(container) {
       const key        = btn.dataset.editReset;
       const [mId, eId] = key.split(':');
       state.resetScheme(mId, eId);
-      const ex  = MUSCLE_GROUPS[mId]?.exercises.find(e => e.id === eId);
+      const ex = MUSCLE_GROUPS[mId]?.exercises.find(e => e.id === eId)
+              ?? loadCustomExercises().find(e => e.id === eId);
       if (!ex) return;
       const def = ex.sets[state.goal];
       updateSchemeDisplay(mId, eId, def, false);
