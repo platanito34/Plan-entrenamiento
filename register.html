@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crear cuenta - IronLog</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#f97316" />
+</head>
+<body class="auth-body">
+
+  <div class="auth-container">
+    <a href="index.html" class="auth-brand">
+      <span class="landing-logo-icon">IL</span>
+      <span>IronLog</span>
+    </a>
+
+    <div class="auth-card">
+      <h1 class="auth-title">Crea tu cuenta</h1>
+      <p class="auth-subtitle">Gratis, sin tarjeta de crédito</p>
+
+      <form id="register-form" class="auth-form" novalidate>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="nombre" class="form-label">Nombre</label>
+            <input
+              type="text"
+              id="nombre"
+              name="nombre"
+              class="form-input"
+              placeholder="Joan"
+              autocomplete="given-name"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="apellido" class="form-label">Apellido</label>
+            <input
+              type="text"
+              id="apellido"
+              name="apellido"
+              class="form-input"
+              placeholder="García"
+              autocomplete="family-name"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="email" class="form-label">Email</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            class="form-input"
+            placeholder="tu@email.com"
+            autocomplete="email"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="password" class="form-label">Contraseña</label>
+          <div class="input-password-wrap">
+            <input
+              type="password"
+              id="password"
+              name="password"
+              class="form-input"
+              placeholder="Mínimo 8 caracteres"
+              autocomplete="new-password"
+              required
+            />
+            <button type="button" class="toggle-password" aria-label="Mostrar contraseña" data-target="password">
+              <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="password2" class="form-label">Repite la contraseña</label>
+          <div class="input-password-wrap">
+            <input
+              type="password"
+              id="password2"
+              name="password2"
+              class="form-input"
+              placeholder="••••••••"
+              autocomplete="new-password"
+              required
+            />
+            <button type="button" class="toggle-password" aria-label="Mostrar contraseña" data-target="password2">
+              <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div id="register-error" class="form-error" hidden></div>
+
+        <button type="submit" id="register-btn" class="btn-primary btn-block">
+          <span id="register-btn-text">Crear cuenta</span>
+          <span id="register-btn-spinner" class="btn-spinner" hidden></span>
+        </button>
+      </form>
+    </div>
+
+    <p class="auth-switch">
+      ¿Ya tienes cuenta?
+      <a href="login.html" class="auth-link">Inicia sesión</a>
+    </p>
+  </div>
+
+  <script type="module">
+    import { authAPI } from './js/api.js';
+
+    const form     = document.getElementById('register-form');
+    const errorBox = document.getElementById('register-error');
+    const btnText  = document.getElementById('register-btn-text');
+    const spinner  = document.getElementById('register-btn-spinner');
+    const btn      = document.getElementById('register-btn');
+
+    document.querySelectorAll('.toggle-password').forEach(function (toggleBtn) {
+      toggleBtn.addEventListener('click', function () {
+        const input = document.getElementById(toggleBtn.dataset.target);
+        input.type = input.type === 'password' ? 'text' : 'password';
+        toggleBtn.setAttribute('aria-label', input.type === 'password' ? 'Mostrar contraseña' : 'Ocultar contraseña');
+      });
+    });
+
+    function showError(msg) {
+      errorBox.textContent = msg;
+      errorBox.hidden = false;
+    }
+
+    function setLoading(loading) {
+      btn.disabled   = loading;
+      btnText.hidden  = loading;
+      spinner.hidden  = !loading;
+    }
+
+    function isValidEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      errorBox.hidden = true;
+
+      const nombre   = form.nombre.value.trim();
+      const apellido = form.apellido.value.trim();
+      const email    = form.email.value.trim();
+      const password = form.password.value;
+      const password2 = form.password2.value;
+
+      if (!nombre || !apellido || !email || !password || !password2) {
+        showError('Por favor, completa todos los campos.');
+        return;
+      }
+      if (!isValidEmail(email)) {
+        showError('El formato del email no es válido.');
+        return;
+      }
+      if (password.length < 8) {
+        showError('La contraseña debe tener al menos 8 caracteres.');
+        return;
+      }
+      if (password !== password2) {
+        showError('Las contraseñas no coinciden.');
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const data = await authAPI.register(nombre, apellido, email, password);
+        localStorage.setItem('gymapp_token', data.token);
+        localStorage.setItem('gymapp_user', JSON.stringify(data.user));
+        window.location.replace('app.html');
+      } catch (err) {
+        showError(err.error || 'Error al crear la cuenta. Inténtalo de nuevo.');
+      } finally {
+        setLoading(false);
+      }
+    });
+  </script>
+</body>
+</html>
