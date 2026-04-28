@@ -438,6 +438,21 @@ function attachAccordionListeners(container) {
       const rest   = panel.querySelector('[data-edit-field="rest"]').value.trim()   || '90 seg';
       state.setScheme(mId, eId, { series, reps, rest });
       updateSchemeDisplay(mId, eId, { series, reps, rest }, true);
+
+      // Auto-select exercise if it wasn't checked yet
+      if (!state.isSelected(mId, eId)) {
+        state.toggle(mId, eId);
+        const checkbox = container.querySelector(`.exercise-check[data-muscle="${mId}"][data-id="${eId}"]`);
+        if (checkbox) checkbox.checked = true;
+        const row = document.getElementById(`row-${mId}-${eId}`);
+        if (row) row.classList.add('exercise-checked');
+        const total = (MUSCLE_GROUPS[mId]?.exercises.length ?? 0)
+                    + loadCustomExercises().filter(ce => ce.muscleId === mId).length;
+        const countEl = document.getElementById(`count-${mId}`);
+        if (countEl) countEl.textContent = `${state.countSelected(mId)}/${total}`;
+        document.querySelector(`.accordion-group[data-group="${mId}"]`)?.classList.remove('warn');
+      }
+
       animatePanel(panel, false);
       document.querySelector(`[data-edit-toggle="${key}"]`)?.classList.remove('active');
     });

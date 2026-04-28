@@ -1769,7 +1769,7 @@ ul     { list-style: none; }
 
 /* ── Exercise edit button & custom dot ──────────────────────────────────────── */
 .exercise-edit-btn {
-  display: none;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 28px;
@@ -1783,8 +1783,6 @@ ul     { list-style: none; }
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
-
-.exercise-row.exercise-checked .exercise-edit-btn { display: inline-flex; }
 
 .exercise-edit-btn:hover,
 .exercise-edit-btn.active {
