@@ -184,7 +184,7 @@
         localStorage.setItem('gymapp_user', JSON.stringify(data.user));
         window.location.replace('app.html');
       } catch (err) {
-        showError(err.error || 'Error al crear la cuenta. Inténtalo de nuevo.');
+        showError(err.error || JSON.stringify(err));
       } finally {
         setLoading(false);
       }

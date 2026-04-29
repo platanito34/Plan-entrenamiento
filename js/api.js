@@ -12,7 +12,10 @@ async function apiRequest(endpoint, options = {}) {
     headers,
   });
   const data = await response.json();
-  if (!response.ok) throw { status: response.status, ...data };
+  if (!response.ok) {
+    console.error('[API]', options.method || 'GET', `${API_URL}${endpoint}`, '→', response.status, data);
+    throw { status: response.status, ...data };
+  }
   return data;
 }
 
