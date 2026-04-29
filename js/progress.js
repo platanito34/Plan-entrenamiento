@@ -2,9 +2,55 @@
 // Body measurements tracking with SVG line charts and goal-aware indicators.
 
 import { buildAchievementsSection } from './achievements.js';
+import { progressAPI }              from './api.js';
 
 const PROGRESS_KEY = 'gym-body-progress';
 const PLANS_KEY    = 'gym-plans';
+
+// ── API normalization ──────────────────────────────────────────────────────────
+function progressRecordToAPI(r) {
+  return {
+    date:        r.date,
+    weight:      r.weight      ?? null,
+    height:      r.height      ?? null,
+    chest:       r.chest       ?? null,
+    waist:       r.waist       ?? null,
+    hips:        r.hips        ?? null,
+    bicep_right: r.bicepR      ?? null,
+    bicep_left:  r.bicepL      ?? null,
+    thigh_right: r.thighR      ?? null,
+    thigh_left:  r.thighL      ?? null,
+  };
+}
+
+function normalizeProgressFromAPI(r) {
+  const rec = {
+    apiId:  r.id,
+    date:   r.date,
+  };
+  if (r.weight      != null) rec.weight = parseFloat(r.weight);
+  if (r.height      != null) rec.height = parseFloat(r.height);
+  if (r.chest       != null) rec.chest  = parseFloat(r.chest);
+  if (r.waist       != null) rec.waist  = parseFloat(r.waist);
+  if (r.hips        != null) rec.hips   = parseFloat(r.hips);
+  if (r.bicep_right != null) rec.bicepR = parseFloat(r.bicep_right);
+  if (r.bicep_left  != null) rec.bicepL = parseFloat(r.bicep_left);
+  if (r.thigh_right != null) rec.thighR = parseFloat(r.thigh_right);
+  if (r.thigh_left  != null) rec.thighL = parseFloat(r.thigh_left);
+  return rec;
+}
+
+async function syncProgressFromAPI() {
+  try {
+    const rows    = await progressAPI.getAll();
+    const records = rows.map(normalizeProgressFromAPI);
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify(records));
+    return records;
+  } catch (err) {
+    console.warn('[progress] API sync failed:', err);
+    return null;
+  }
+}
 
 // ── Storage ────────────────────────────────────────────────────────────────────
 function loadProgress() {
@@ -308,7 +354,7 @@ function buildHistory() {
         <div class="pg-hist-entry">
           <div class="pg-hist-header">
             <span class="pg-hist-date">${fmtDate(r.date)}</span>
-            <button class="pg-hist-del" data-del="${trueIdx}" type="button" aria-label="Eliminar registro">✕</button>
+            <button class="pg-hist-del" data-del="${r.date}" type="button" aria-label="Eliminar registro">✕</button>
           </div>
           <div class="pg-hist-chips">${chips}</div>
         </div>`;
@@ -461,6 +507,18 @@ function handleSave() {
   _records.sort((a, b) => a.date.localeCompare(b.date));
   saveProgress(_records);
 
+  // Sync to API (fire-and-forget)
+  progressAPI.create(progressRecordToAPI(record))
+    .then(result => {
+      // Store the API-assigned id in the local record for future deletes
+      const i = _records.findIndex(r => r.date === date);
+      if (i !== -1 && result.id) {
+        _records[i].apiId = result.id;
+        saveProgress(_records);
+      }
+    })
+    .catch(err => console.warn('[progress] POST failed:', err));
+
   closePanel();
 
   // Partial re-render (summary + chart + history)
@@ -529,18 +587,25 @@ function attachChartListeners() {
 function attachHistoryListeners() {
   document.querySelectorAll('[data-del]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const idx = parseInt(btn.dataset.del, 10);
-      if (isNaN(idx) || idx < 0 || idx >= _records.length) return;
-      _records.splice(idx, 1);
+      const date   = btn.dataset.del;
+      const target = _records.find(r => r.date === date);
+      if (!target) return;
+      _records = _records.filter(r => r.date !== date);
       saveProgress(_records);
       updateView();
+
+      if (target.apiId) {
+        progressAPI.remove(target.apiId)
+          .catch(err => console.warn('[progress] DELETE failed:', err));
+      }
     });
   });
 }
 
 // ── Main renderer ──────────────────────────────────────────────────────────────
-export function renderProgressPage() {
-  _records = loadProgress();
+export async function renderProgressPage() {
+  const fresh = await syncProgressFromAPI();
+  _records = fresh ?? loadProgress();
   _goal    = detectGoal();
 
   const app = document.getElementById('app');

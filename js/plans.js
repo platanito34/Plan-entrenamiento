@@ -2,9 +2,36 @@
 import { goToPage }                              from './router.js';
 import { saveSession, loadHistory }              from './history.js';
 import { checkAchievements, refreshSideNavStreak } from './achievements.js';
+import { plansAPI }                              from './api.js';
 
 const PLANS_KEY    = 'gym-plans';
 const MIGRATED_KEY = '_gym_migrated';
+
+// ── API normalization ──────────────────────────────────────────────────────────
+function normalizePlanFromAPI(p) {
+  return {
+    id:          String(p.id),
+    apiId:       p.id,
+    name:        p.name,
+    goal:        p.goal,
+    days:        p.days,
+    plan:        p.data,
+    generatedAt: p.created_at,
+  };
+}
+
+// ── API sync ───────────────────────────────────────────────────────────────────
+async function syncPlansFromAPI() {
+  try {
+    const apiPlans = await plansAPI.getAll();
+    const plans = apiPlans.map(normalizePlanFromAPI);
+    localStorage.setItem(PLANS_KEY, JSON.stringify(plans));
+    return plans;
+  } catch (err) {
+    console.warn('[plans] API sync failed:', err);
+    return null;
+  }
+}
 
 // ── Storage helpers ────────────────────────────────────────────────────────────
 export function loadPlans() {
@@ -42,10 +69,28 @@ export function savePlan(plan) {
   const plans = loadPlans();
   plans.unshift(plan);
   localStorage.setItem(PLANS_KEY, JSON.stringify(plans));
+
+  plansAPI.create(plan.name, plan.goal, plan.days, plan.plan)
+    .then(result => {
+      const current = loadPlans();
+      const idx = current.findIndex(p => p.id === plan.id);
+      if (idx !== -1) {
+        current[idx].apiId = result.id;
+        localStorage.setItem(PLANS_KEY, JSON.stringify(current));
+      }
+    })
+    .catch(err => console.warn('[plans] POST failed:', err));
 }
 
 export function deletePlan(id) {
-  localStorage.setItem(PLANS_KEY, JSON.stringify(loadPlans().filter(p => p.id !== id)));
+  const plans = loadPlans();
+  const target = plans.find(p => p.id === id);
+  localStorage.setItem(PLANS_KEY, JSON.stringify(plans.filter(p => p.id !== id)));
+
+  if (target?.apiId) {
+    plansAPI.remove(target.apiId)
+      .catch(err => console.warn('[plans] DELETE failed:', err));
+  }
 }
 
 export function updatePlan(updatedPlan) {
@@ -54,6 +99,12 @@ export function updatePlan(updatedPlan) {
   if (idx !== -1) {
     plans[idx] = updatedPlan;
     localStorage.setItem(PLANS_KEY, JSON.stringify(plans));
+
+    const apiId = updatedPlan.apiId;
+    if (apiId) {
+      plansAPI.update(apiId, updatedPlan.name, updatedPlan.goal, updatedPlan.days, updatedPlan.plan)
+        .catch(err => console.warn('[plans] PUT failed:', err));
+    }
   }
 }
 
@@ -97,9 +148,12 @@ function togglePanel(el, open) {
 }
 
 // ── Page renderer ──────────────────────────────────────────────────────────────
-export function renderPlansPage() {
-  const app   = document.getElementById('app');
-  const plans = loadPlans();
+export async function renderPlansPage() {
+  const app = document.getElementById('app');
+  app.innerHTML = `<div class="view-wrapper"><div class="view-header"><h2 class="view-title">Mis planes</h2></div><div class="loading-spinner-wrap"><div class="loading-spinner"></div></div></div>`;
+
+  const fresh = await syncPlansFromAPI();
+  const plans = fresh ?? loadPlans();
 
   if (plans.length === 0) {
     app.innerHTML = `
@@ -136,7 +190,6 @@ export function renderPlansPage() {
       ? `<p class="myplan-last-session">Último entreno: ${lastSession.dayLabel} · ${daysAgo(lastSession.date)}</p>`
       : '';
 
-    // Quick log day options
     const dayOptions = plan.plan.map(d =>
       `<option value="${d.label}">${d.letter} · ${d.label}</option>`
     ).join('');
@@ -244,7 +297,6 @@ export function renderPlansPage() {
     });
   });
 
-  // Char counter for notes textarea
   plans.forEach(plan => {
     const ta = document.getElementById(`ql-notes-${plan.id}`);
     const cc = document.getElementById(`ql-cc-${plan.id}`);
@@ -264,12 +316,9 @@ export function renderPlansPage() {
       const dayLabel = document.getElementById(`ql-day-${id}`)?.value ?? plan.plan[0]?.label ?? '';
       const durVal   = document.getElementById(`ql-dur-${id}`)?.value;
       const notes    = document.getElementById(`ql-notes-${id}`)?.value?.trim() ?? '';
-
-      const durSec = durVal ? Math.round(parseFloat(durVal) * 60) : 0;
-
-      // Derive muscles from selected day
-      const day     = plan.plan.find(d => d.label === dayLabel);
-      const muscles = day ? day.sections.map(s => s.muscleLabel) : [];
+      const durSec   = durVal ? Math.round(parseFloat(durVal) * 60) : 0;
+      const day      = plan.plan.find(d => d.label === dayLabel);
+      const muscles  = day ? day.sections.map(s => s.muscleLabel) : [];
 
       saveSession({
         date:        new Date().toISOString(),
@@ -288,11 +337,7 @@ export function renderPlansPage() {
 
       const panel = document.getElementById(`ql-${id}`);
       if (panel) togglePanel(panel, false);
-
-      // Refresh cards to show updated "último entreno"
       renderPlansPage();
-
-      // Show toast (dispatched to app.js via custom event)
       document.dispatchEvent(new CustomEvent('show-toast', { detail: '✓ Sesión guardada' }));
     });
   });

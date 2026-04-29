@@ -1,12 +1,65 @@
 // ── Historial page ─────────────────────────────────────────────────────────────
+import { sessionsAPI } from './api.js';
 
 const HISTORY_KEY = 'gym-history';
+
+// ── API normalization ──────────────────────────────────────────────────────────
+function sessionToAPI(s) {
+  return {
+    plan_id:          s.planId   || null,
+    plan_name:        s.planName || null,
+    day_label:        s.dayLabel || null,
+    muscles:          s.muscles  || null,
+    duration_minutes: s.durationSec ? Math.round(s.durationSec / 60) : null,
+    notes:            s.notes    || null,
+    exercises: {
+      log:       s.exercisesLog || [],
+      completed: s.completed    || 0,
+      deferred:  s.deferred     || 0,
+      quickLog:  s.quickLog     || false,
+    },
+  };
+}
+
+function normalizeSessionFromAPI(s) {
+  const ex = (typeof s.exercises === 'object' && s.exercises !== null) ? s.exercises : {};
+  return {
+    apiId:        s.id,
+    date:         s.completed_at,
+    planId:       s.plan_id,
+    planName:     s.plan_name,
+    dayLabel:     s.day_label,
+    muscles:      s.muscles  || [],
+    durationSec:  s.duration_minutes ? s.duration_minutes * 60 : 0,
+    completed:    ex.completed    || 0,
+    deferred:     ex.deferred     || 0,
+    notes:        s.notes,
+    exercisesLog: ex.log          || [],
+    quickLog:     ex.quickLog     || false,
+  };
+}
+
+// ── API sync ───────────────────────────────────────────────────────────────────
+async function syncHistoryFromAPI() {
+  try {
+    const apiSessions = await sessionsAPI.getAll();
+    const history = apiSessions.map(normalizeSessionFromAPI);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    return history;
+  } catch (err) {
+    console.warn('[history] API sync failed:', err);
+    return null;
+  }
+}
 
 // ── Storage ────────────────────────────────────────────────────────────────────
 export function saveSession(record) {
   const history = loadHistory();
   history.unshift(record);
   localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+
+  sessionsAPI.create(sessionToAPI(record))
+    .catch(err => console.warn('[history] POST failed:', err));
 }
 
 export function loadHistory() {
@@ -35,7 +88,6 @@ function formatDuration(secs) {
 function calcStats(history) {
   const today = new Date();
 
-  // ── Week days ──────────────────────────────────────────────────────────────
   const monday = new Date(today);
   monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
   const weekKeySet = new Set();
@@ -48,14 +100,12 @@ function calcStats(history) {
     history.filter(s => weekKeySet.has(s.date.slice(0, 10))).map(s => s.date.slice(0, 10))
   ).size;
 
-  // ── Month stats ────────────────────────────────────────────────────────────
   const ym = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
   const monthSessions = history.filter(s => s.date.startsWith(ym));
   const monthDays     = new Set(monthSessions.map(s => s.date.slice(0, 10))).size;
   const monthTotalSec = monthSessions.reduce((sum, s) => sum + (s.durationSec || 0), 0);
   const monthTimeStr  = formatDuration(monthTotalSec);
 
-  // ── Streak ─────────────────────────────────────────────────────────────────
   const trainedKeys = new Set(history.map(s => s.date.slice(0, 10)));
   let streak = 0;
   const d = new Date(today);
@@ -100,7 +150,7 @@ function buildMonthView(history, year, month) {
   const today      = new Date();
   const firstDay   = new Date(year, month, 1);
   const lastDay    = new Date(year, month + 1, 0);
-  const startOff   = (firstDay.getDay() + 6) % 7; // Mon = 0
+  const startOff   = (firstDay.getDay() + 6) % 7;
 
   const cells = [];
   for (let i = 0; i < startOff; i++) {
@@ -132,7 +182,6 @@ function buildMonthView(history, year, month) {
     </div>`;
 }
 
-// ── Detail panel ───────────────────────────────────────────────────────────────
 function buildDetail(history, key) {
   const sessions = history.filter(s => s.date.startsWith(key));
   if (!sessions.length) return '';
@@ -167,9 +216,12 @@ function buildDetail(history, key) {
 }
 
 // ── Page renderer ──────────────────────────────────────────────────────────────
-export function renderHistoryPage() {
-  const history = loadHistory();
-  const app     = document.getElementById('app');
+export async function renderHistoryPage() {
+  const app = document.getElementById('app');
+  app.innerHTML = `<div class="view-wrapper"><div class="view-header"><h2 class="view-title">Historial</h2></div><div class="loading-spinner-wrap"><div class="loading-spinner"></div></div></div>`;
+
+  const fresh   = await syncHistoryFromAPI();
+  const history = fresh ?? loadHistory();
   const stats   = calcStats(history);
 
   app.innerHTML = `
@@ -212,12 +264,10 @@ export function renderHistoryPage() {
       <div id="hist-detail-wrap"></div>
     </div>`;
 
-  // ── Internal state ─────────────────────────────────────────────────────────
   let _view  = 'week';
   let _year  = new Date().getFullYear();
   let _month = new Date().getMonth();
 
-  // ── Day click handler ──────────────────────────────────────────────────────
   function attachDayListeners() {
     document.querySelectorAll('[data-day-key]').forEach(el => {
       el.addEventListener('click', () => {
@@ -230,7 +280,6 @@ export function renderHistoryPage() {
     });
   }
 
-  // ── Render current view ────────────────────────────────────────────────────
   function showView() {
     const container = document.getElementById('hist-view');
     document.getElementById('hist-detail-wrap').innerHTML = '';
@@ -255,7 +304,6 @@ export function renderHistoryPage() {
     attachDayListeners();
   }
 
-  // ── Toggle listeners ───────────────────────────────────────────────────────
   app.querySelectorAll('.hist-toggle-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       _view = btn.dataset.view;

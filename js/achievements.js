@@ -1,4 +1,5 @@
 // ── Achievements & Streaks ─────────────────────────────────────────────────────
+import { achievementsAPI } from './api.js';
 
 const ACHIEVEMENTS_KEY = 'gym-achievements';
 const HISTORY_KEY      = 'gym-history';
@@ -19,6 +20,20 @@ export const ACHIEVEMENTS = [
   { id: 'no-excuses',    icon: '💀', name: 'Sin excusas',      desc: 'Completa una sesión un lunes antes de las 9h' },
   { id: 'night-owl',     icon: '🌙', name: 'Noctámbulo',       desc: 'Completa una sesión después de las 21h' },
 ];
+
+// ── API sync ───────────────────────────────────────────────────────────────────
+export async function syncAchievementsFromAPI() {
+  try {
+    const rows = await achievementsAPI.getAll();
+    const earned = {};
+    for (const row of rows) earned[row.achievement_id] = row.unlocked_at;
+    localStorage.setItem(ACHIEVEMENTS_KEY, JSON.stringify(earned));
+    return earned;
+  } catch (err) {
+    console.warn('[achievements] API sync failed:', err);
+    return null;
+  }
+}
 
 // ── Storage ────────────────────────────────────────────────────────────────────
 export function loadAchievements() {
@@ -132,8 +147,8 @@ export function checkAchievements() {
 
   if (newlyEarned.length > 0) {
     saveAchievements(earned);
-    // Notify each newly earned achievement
     for (const id of newlyEarned) {
+      achievementsAPI.unlock(id).catch(err => console.warn('[achievements] POST failed:', id, err));
       const ach = ACHIEVEMENTS.find(a => a.id === id);
       if (ach) {
         document.dispatchEvent(new CustomEvent('show-achievement-toast', { detail: ach }));

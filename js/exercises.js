@@ -1,8 +1,10 @@
 // ── Mis ejercicios page ────────────────────────────────────────────────────────
 import { loadPlans }                                                    from './plans.js';
-import { loadWeights, setWorkingWeight, setExerciseNote }               from './weights.js';
+import { loadWeights, setWorkingWeight, setExerciseNote, syncWeightsFromAPI } from './weights.js';
 import { loadCustomExercises, addCustomExercise,
-         updateCustomExercise, deleteCustomExercise }                   from './customExercises.js';
+         updateCustomExercise, deleteCustomExercise,
+         syncCustomExercisesFromAPI }                                   from './customExercises.js';
+import { favoritesAPI }                                                 from './api.js';
 
 // ── Favorites ─────────────────────────────────────────────────────────────────
 const FAV_KEY = 'gym-favorites';
@@ -18,11 +20,31 @@ function saveFavorites(set) {
   localStorage.setItem(FAV_KEY, JSON.stringify([...set]));
 }
 
+async function syncFavoritesFromAPI() {
+  try {
+    const rows = await favoritesAPI.getAll();
+    const favs = new Set(rows.map(r => r.exercise_id));
+    localStorage.setItem(FAV_KEY, JSON.stringify([...favs]));
+    return favs;
+  } catch (err) {
+    console.warn('[favorites] API sync failed:', err);
+    return null;
+  }
+}
+
 function toggleFavorite(id) {
   const favs = loadFavorites();
-  if (favs.has(id)) { favs.delete(id); } else { favs.add(id); }
+  const adding = !favs.has(id);
+  if (adding) { favs.add(id); } else { favs.delete(id); }
   saveFavorites(favs);
-  return favs.has(id);
+
+  if (adding) {
+    favoritesAPI.add(id).catch(err => console.warn('[favorites] POST failed:', err));
+  } else {
+    favoritesAPI.remove(id).catch(err => console.warn('[favorites] DELETE failed:', err));
+  }
+
+  return adding;
 }
 
 // ── Module state ───────────────────────────────────────────────────────────────
@@ -103,7 +125,14 @@ function buildPanelHtml() {
 }
 
 // ── Main renderer ──────────────────────────────────────────────────────────────
-export function renderExercisesPage() {
+export async function renderExercisesPage() {
+  // Sync favorites, weights, and custom exercises from API in parallel
+  await Promise.allSettled([
+    syncFavoritesFromAPI(),
+    syncWeightsFromAPI(),
+    syncCustomExercisesFromAPI(),
+  ]);
+
   _weights   = loadWeights();
   _favorites = loadFavorites();
 

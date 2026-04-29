@@ -30,3 +30,65 @@ export const authAPI = {
   }),
   verify: () => apiRequest('/auth/verify'),
 };
+
+export const plansAPI = {
+  getAll: () => apiRequest('/plans'),
+  create: (name, goal, days, data) => apiRequest('/plans', {
+    method: 'POST',
+    body: JSON.stringify({ name, goal, days, data }),
+  }),
+  update: (id, name, goal, days, data) => apiRequest(`/plans/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ name, goal, days, data }),
+  }),
+  remove: (id) => apiRequest(`/plans/${id}`, { method: 'DELETE' }),
+};
+
+export const sessionsAPI = {
+  getAll: () => apiRequest('/sessions'),
+  create: (data) => apiRequest('/sessions', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+};
+
+export const weightsAPI = {
+  getAll: () => apiRequest('/weights'),
+  update: (exerciseId, data) => apiRequest(`/weights/${exerciseId}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+};
+
+export const progressAPI = {
+  getAll: () => apiRequest('/progress'),
+  create: (data) => apiRequest('/progress', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  remove: (id) => apiRequest(`/progress/${id}`, { method: 'DELETE' }),
+};
+
+export const exercisesAPI = {
+  getCustom: () => apiRequest('/exercises/custom'),
+  create: (data) => apiRequest('/exercises/custom', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  update: (id, data) => apiRequest(`/exercises/custom/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  }),
+  remove: (id) => apiRequest(`/exercises/custom/${id}`, { method: 'DELETE' }),
+};
+
+export const favoritesAPI = {
+  getAll: () => apiRequest('/favorites'),
+  add: (exerciseId) => apiRequest(`/favorites/${exerciseId}`, { method: 'POST' }),
+  remove: (exerciseId) => apiRequest(`/favorites/${exerciseId}`, { method: 'DELETE' }),
+};
+
+export const achievementsAPI = {
+  getAll: () => apiRequest('/achievements'),
+  unlock: (achievementId) => apiRequest(`/achievements/${achievementId}`, { method: 'POST' }),
+};
