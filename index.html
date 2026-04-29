@@ -147,7 +147,8 @@
 
   <!-- ── PWA install banner ───────────────────────────────────────────────────── -->
   <div id="pwa-banner" class="pwa-banner" hidden>
-    <span>Instala IronLog en tu móvil para usarla sin conexión</span>
+    <span class="pwa-banner-icon" aria-hidden="true">IL</span>
+    <span>Instala IronLog en tu móvil</span>
     <button id="pwa-install-btn" class="btn-primary" type="button">Instalar</button>
     <button id="pwa-dismiss-btn" class="btn-ghost pwa-dismiss" type="button" aria-label="Cerrar">✕</button>
   </div>
@@ -164,22 +165,30 @@
   <script>
     // PWA install prompt
     let deferredPrompt = null;
+
+    function showBanner() {
+      document.getElementById('pwa-banner').hidden = false;
+      document.body.classList.add('pwa-banner-visible');
+    }
+    function hideBanner() {
+      document.getElementById('pwa-banner').hidden = true;
+      document.body.classList.remove('pwa-banner-visible');
+    }
+
     window.addEventListener('beforeinstallprompt', function (e) {
       e.preventDefault();
       deferredPrompt = e;
-      document.getElementById('pwa-banner').hidden = false;
+      showBanner();
     });
     document.getElementById('pwa-install-btn').addEventListener('click', function () {
       if (!deferredPrompt) return;
       deferredPrompt.prompt();
       deferredPrompt.userChoice.then(function () {
         deferredPrompt = null;
-        document.getElementById('pwa-banner').hidden = true;
+        hideBanner();
       });
     });
-    document.getElementById('pwa-dismiss-btn').addEventListener('click', function () {
-      document.getElementById('pwa-banner').hidden = true;
-    });
+    document.getElementById('pwa-dismiss-btn').addEventListener('click', hideBanner);
 
     // Register service worker
     if ('serviceWorker' in navigator) {
