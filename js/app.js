@@ -1,6 +1,7 @@
 import { GOALS, SPLITS, MUSCLE_GROUPS } from './data.js';
 import { state } from './state.js';
 import { initRouter, goToPage } from './router.js';
+import { renderDashboardPage }                          from './dashboard.js';
 import { renderPlansPage, savePlan, updatePlan } from './plans.js';
 import { renderSessionPage } from './session.js';
 import { renderHistoryPage } from './history.js';
@@ -876,7 +877,8 @@ function fmtShortDate(iso) {
 
 // ── Init ───────────────────────────────────────────────────────────────────────
 initRouter((page, data) => {
-  if      (page === 'my-plans')     renderPlansPage();
+  if      (page === 'dashboard')    renderDashboardPage();
+  else if (page === 'my-plans')     renderPlansPage();
   else if (page === 'session')      renderSessionPage(data);
   else if (page === 'history')      renderHistoryPage();
   else if (page === 'edit-plan')    renderEditPlanPage(data);
@@ -945,5 +947,5 @@ document.addEventListener('show-achievement-toast', e => {
   }, 4000);
 });
 
-navigate(1);
+goToPage('dashboard');
 refreshSideNavStreak();
