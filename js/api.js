@@ -1,4 +1,4 @@
-const API_URL = 'https://ironlogapp.duckmydns.org/api';
+const API_URL = 'https://ironlogapp.duckdns.org/api';
 
 async function apiRequest(endpoint, options = {}) {
   const token = localStorage.getItem('gymapp_token');
