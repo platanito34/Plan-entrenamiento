@@ -16,6 +16,7 @@ const app = express();
 const PORT = process.env.PORT || 3002;
 
 app.use(helmet());
+app.set('trust proxy', 1);
 
 app.use(cors({
   origin: process.env.ALLOWED_ORIGIN || 'http://localhost',
@@ -23,7 +24,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-app.use(express.json({ limit: '10kb' }));
+app.use(express.json({ limit: '2mb' }));
 
 app.use('/api/auth',         authRoutes);
 app.use('/api/plans',        plansRoutes);
