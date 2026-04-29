@@ -42,9 +42,9 @@ function authMiddleware(req, res, next) {
 
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
-  const { nombre, email, password } = req.body;
+  const { nombre, apellido, email, password } = req.body;
 
-  if (!nombre || !email || !password) {
+  if (!nombre || !apellido || !email || !password) {
     return res.status(400).json({ error: 'Todos los campos son obligatorios.' });
   }
   if (!isValidEmail(email)) {
@@ -64,13 +64,17 @@ router.post('/register', async (req, res) => {
     }
 
     const hash = await bcrypt.hash(password, 12);
+    const trimmedNombre  = nombre.trim();
+    const trimmedApellido = apellido.trim();
+    const trimmedEmail   = email.toLowerCase().trim();
+
     const [result] = await pool.execute(
-      'INSERT INTO users (nombre, email, password) VALUES (?, ?, ?)',
-      [nombre.trim(), email.toLowerCase().trim(), hash]
+      'INSERT INTO users (nombre, apellido, email, password) VALUES (?, ?, ?, ?)',
+      [trimmedNombre, trimmedApellido, trimmedEmail, hash]
     );
 
-    const token = generateToken({ id: result.insertId, nombre: nombre.trim(), email: email.toLowerCase().trim() });
-    return res.status(201).json({ token, user: { id: result.insertId, nombre: nombre.trim(), email: email.toLowerCase().trim() } });
+    const token = generateToken({ id: result.insertId, nombre: trimmedNombre, apellido: trimmedApellido, email: trimmedEmail });
+    return res.status(201).json({ token, user: { id: result.insertId, nombre: trimmedNombre, apellido: trimmedApellido, email: trimmedEmail } });
   } catch (err) {
     console.error('Error en /register:', err.message);
     return res.status(500).json({ error: 'Error interno del servidor.' });
