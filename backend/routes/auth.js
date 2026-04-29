@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
 const pool = require('../db');
+const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -26,19 +27,6 @@ function generateToken(user) {
   );
 }
 
-function authMiddleware(req, res, next) {
-  const header = req.headers.authorization;
-  if (!header || !header.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Token no proporcionado.' });
-  }
-  const token = header.split(' ')[1];
-  try {
-    req.user = jwt.verify(token, process.env.JWT_SECRET);
-    next();
-  } catch {
-    return res.status(401).json({ error: 'Token inválido o expirado.' });
-  }
-}
 
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
