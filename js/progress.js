@@ -128,18 +128,29 @@ function fmtDate(iso) {
 }
 
 // ── Summary cards ──────────────────────────────────────────────────────────────
+const CARD_ICONS = {
+  'Peso': '⚖️', 'Altura': '📏', 'Grasa corporal': '📉',
+  'Pecho': '💪', 'Cintura': '📐', 'Cadera': '🔵',
+  'Bícep D': '💪', 'Bícep I': '💪', 'Muslo D': '🦵', 'Muslo I': '🦵',
+};
+
+function emptyCard(label) {
+  const icon = CARD_ICONS[label] ?? '📊';
+  return `
+    <div class="pg-card">
+      <span class="pg-card-icon">${icon}</span>
+      <p class="pg-card-label">${label}</p>
+      <p class="pg-card-value">—</p>
+      <p class="pg-card-empty-hint">Sin datos aún — añade tu primer registro</p>
+    </div>`;
+}
+
 function buildSummary() {
   const weightPoints  = _records.filter(r => r.weight != null).sort((a, b) => a.date.localeCompare(b.date));
   const heightPoints  = _records.filter(r => r.height != null).sort((a, b) => a.date.localeCompare(b.date));
 
   function card(label, pts, unit, lowerIsGood) {
-    if (pts.length === 0) {
-      return `
-        <div class="pg-card">
-          <p class="pg-card-label">${label}</p>
-          <p class="pg-card-value">—</p>
-        </div>`;
-    }
+    if (pts.length === 0) return emptyCard(label);
     const latest = pts[pts.length - 1].value ?? parseFloat(pts[pts.length - 1][pts[pts.length - 1].weight !== undefined ? 'weight' : 'bodyFat']);
     const latestVal = typeof latest === 'number' ? latest : parseFloat(pts[pts.length - 1].weight ?? pts[pts.length - 1].bodyFat);
 
@@ -180,11 +191,9 @@ function buildSummary() {
   }
 
   function cardSimple(label, pts, key, unit, lowerIsGood) {
-    if (pts.length === 0) {
-      return `<div class="pg-card"><p class="pg-card-label">${label}</p><p class="pg-card-value">—</p></div>`;
-    }
+    if (pts.length === 0) return emptyCard(label);
     const latestV = latestNumeric(pts, key);
-    if (latestV === null) return `<div class="pg-card"><p class="pg-card-label">${label}</p><p class="pg-card-value">—</p></div>`;
+    if (latestV === null) return emptyCard(label);
 
     let chgHtml = '';
     if (pts.length >= 2) {
@@ -212,7 +221,7 @@ function buildSummary() {
   // Height card: no change arrow (height doesn't meaningfully change)
   function cardHeight(pts) {
     const latestV = latestNumeric(pts, 'height');
-    if (latestV === null) return `<div class="pg-card"><p class="pg-card-label">Altura</p><p class="pg-card-value">—</p></div>`;
+    if (latestV === null) return emptyCard('Altura');
     return `
       <div class="pg-card">
         <p class="pg-card-label">Altura</p>

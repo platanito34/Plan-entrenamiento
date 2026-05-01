@@ -249,14 +249,18 @@ export async function renderPlansPage() {
         <ul class="myplan-days">${daysHtml}</ul>
         ${lastSessHtml}
         <div class="myplan-actions">
-          <button class="btn btn-primary" data-action="start" data-id="${plan.id}" type="button">Empezar sesión</button>
-          ${isActive
-            ? `<button class="btn btn-ghost btn-sm btn-deactivate" data-action="deactivate" data-id="${plan.id}" type="button">Desactivar</button>`
-            : `<button class="btn btn-ghost btn-sm" data-action="activate" data-id="${plan.id}" type="button">Activar</button>`
-          }
-          <button class="btn btn-ghost btn-sm" data-action="weights" data-id="${plan.id}" type="button">Pesos</button>
-          <button class="btn btn-ghost btn-sm" data-action="edit"    data-id="${plan.id}" type="button">Editar</button>
-          <button class="btn btn-ghost btn-sm" data-action="delete"  data-id="${plan.id}" type="button">Eliminar</button>
+          <div class="myplan-primary-row">
+            <button class="btn btn-primary" data-action="start" data-id="${plan.id}" type="button">Empezar sesión</button>
+            ${isActive
+              ? `<button class="btn btn-ghost btn-sm btn-deactivate" data-action="deactivate" data-id="${plan.id}" type="button">Desactivar</button>`
+              : `<button class="btn btn-ghost btn-sm" data-action="activate" data-id="${plan.id}" type="button">Activar</button>`
+            }
+          </div>
+          <div class="myplan-secondary-row">
+            <button class="btn btn-ghost btn-sm" data-action="weights" data-id="${plan.id}" type="button">Pesos</button>
+            <button class="btn btn-ghost btn-sm" data-action="edit"    data-id="${plan.id}" type="button">Editar</button>
+            <button class="btn-ghost-danger"      data-action="delete"  data-id="${plan.id}" type="button">Eliminar</button>
+          </div>
         </div>
         <button class="myplan-quick-log-btn" data-action="quick-log" data-id="${plan.id}" type="button">
           + Registrar sesión rápida

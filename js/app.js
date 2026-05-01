@@ -661,7 +661,11 @@ function renderStep4() {
             return `
               <li class="plan-exercise-item">
                 <span class="plan-exercise-name">${ex.name}</span>
-                <span class="plan-exercise-scheme">${s.series} × ${s.reps} · ${s.rest}</span>
+                <div class="plan-scheme-badges">
+                  <span class="scheme-badge">${s.series}×</span>
+                  <span class="scheme-badge">${s.reps}</span>
+                  <span class="scheme-badge scheme-badge-rest">${s.rest}</span>
+                </div>
               </li>`;
           }).join('');
           return `

@@ -1,9 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
 /* ── Variables ─────────────────────────────────────────────────────────────── */
 :root {
   --bg:           #0f1117;
-  --surface:      #1e2130;
-  --surface-2:    #131520;
-  --border:       #2d3147;
+  --surface:      #1a1d2e;
+  --surface-2:    #11131f;
+  --border:       rgba(45, 49, 71, 0.65);
   --accent:       #f97316;
   --accent-dim:   rgba(249, 115, 22, 0.12);
   --accent-glow:  rgba(249, 115, 22, 0.35);
@@ -15,11 +17,15 @@
   --warn-dim:     rgba(245, 158, 11, 0.12);
   --success:      #22c55e;
 
-  --r-sm: 0.4rem;
-  --r-md: 0.65rem;
-  --r-lg: 0.9rem;
-  --r-xl: 1.1rem;
+  --r-sm:   0.375rem;
+  --r-md:   0.625rem;
+  --r-lg:   0.875rem;
+  --r-xl:   1.125rem;
+  --r-card: 0.875rem;   /* 14px — consistent for all cards */
   --r-full: 999px;
+
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.45), 0 4px 16px rgba(0,0,0,0.25);
+  --shadow-sm:   0 1px 2px rgba(0,0,0,0.35);
 }
 
 /* ── Reset / base ──────────────────────────────────────────────────────────── */
@@ -28,13 +34,16 @@
 html { scroll-behavior: smooth; }
 
 body {
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
   font-size: 15px;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(249,115,22,0.35) transparent;
 }
 
 button { cursor: pointer; font-family: inherit; }
@@ -147,10 +156,10 @@ ul     { list-style: none; }
 }
 
 .view-title {
-  font-size: 1.4rem;
+  font-size: 1.6rem;
   font-weight: 700;
   color: var(--text);
-  letter-spacing: -0.3px;
+  letter-spacing: -0.5px;
 }
 
 .view-subtitle {
@@ -183,9 +192,9 @@ ul     { list-style: none; }
   border-radius: var(--r-md);
   border: none;
   font-size: 0.95rem;
-  font-weight: 700;
-  letter-spacing: 0.2px;
-  transition: background 0.15s ease, opacity 0.15s, transform 0.1s ease;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, opacity 0.18s, transform 0.12s ease, box-shadow 0.18s ease;
 }
 
 .btn:active:not(:disabled) { transform: scale(0.97); }
@@ -760,42 +769,71 @@ ul     { list-style: none; }
 }
 
 .plan-section {
-  padding: 0.65rem 1.1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 0.8rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.045);
 }
 
 .plan-section:last-child { border-bottom: none; }
 
 .plan-section-muscle {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: var(--text-dim);
-  margin-bottom: 0.4rem;
+  letter-spacing: 0.09em;
+  color: var(--text-muted);
+  margin-bottom: 0.6rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
-.plan-section-exercises { display: flex; flex-direction: column; gap: 0.35rem; }
+.plan-section-exercises { display: flex; flex-direction: column; gap: 0.5rem; }
 
 .plan-exercise-item {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
-  gap: 0.5rem;
-  padding: 0.45rem 0.65rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.85rem;
   background: var(--surface-2);
-  border-radius: var(--r-sm);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-sm);
 }
 
 .plan-exercise-name {
-  font-size: 0.85rem;
+  font-size: 0.875rem;
+  font-weight: 500;
   color: var(--text);
   flex: 1;
   line-height: 1.3;
 }
 
+/* Scheme badges */
+.plan-scheme-badges {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.scheme-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-radius: var(--r-sm);
+  padding: 0.15rem 0.4rem;
+  white-space: nowrap;
+}
+
+.scheme-badge-rest {
+  background: var(--warn-dim);
+  color: var(--warn);
+}
+
+/* Legacy: keep .plan-exercise-scheme for compatibility */
 .plan-exercise-scheme {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 600;
   color: var(--text-dim);
   white-space: nowrap;
   flex-shrink: 0;
@@ -972,46 +1010,48 @@ ul     { list-style: none; }
 .myplan-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--r-xl);
+  border-radius: var(--r-card);
   overflow: hidden;
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s, border-color 0.2s;
 }
 
 .myplan-header {
-  padding: 0.85rem 1.1rem 0.7rem;
+  padding: 1rem 1.25rem 0.85rem;
   background: var(--surface-2);
   border-bottom: 1px solid var(--border);
 }
 
 .myplan-name {
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: var(--text);
 }
 
 .myplan-date {
-  font-size: 0.74rem;
+  font-size: 0.72rem;
   color: var(--text-dim);
-  margin-top: 0.15rem;
+  margin-top: 0.2rem;
 }
 
 .myplan-days {
-  padding: 0.65rem 1.1rem;
+  padding: 0.85rem 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.5rem;
 }
 
 .myplan-day {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
-  font-size: 0.82rem;
+  gap: 0.6rem;
+  font-size: 0.84rem;
   color: var(--text-muted);
 }
 
 .myplan-day-letter {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: var(--accent-dim);
   color: var(--accent);
@@ -1027,14 +1067,46 @@ ul     { list-style: none; }
 
 .myplan-actions {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 0.5rem;
-  padding: 0.75rem 1.1rem;
+  padding: 0.9rem 1.25rem;
   border-top: 1px solid var(--border);
 }
 
-.myplan-actions .btn-primary { flex: 1 1 auto; min-width: 130px; }
+.myplan-primary-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.myplan-primary-row .btn-primary { flex: 1; }
+
+.myplan-secondary-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.45rem;
+}
+
+@media (min-width: 400px) {
+  .myplan-secondary-row { grid-template-columns: repeat(3, auto); justify-content: start; }
+}
+
+/* Danger button (delete) */
+.btn-ghost-danger {
+  background: transparent;
+  border: 1px solid rgba(248,113,113,0.22);
+  border-radius: var(--r-md);
+  color: #f87171;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.18s, border-color 0.18s;
+}
+.btn-ghost-danger:hover {
+  background: rgba(248,113,113,0.1);
+  border-color: rgba(248,113,113,0.45);
+}
 
 /* ── Session: day picker ────────────────────────────────────────────────────── */
 .session-days {
@@ -3650,10 +3722,25 @@ select.ex-form-input { appearance: none; cursor: pointer; }
 
 .ach-card:hover { transform: translateY(-2px); }
 
-/* Earned */
+/* Earned — shimmer border */
 .ach-earned {
   background: linear-gradient(145deg, rgba(249,115,22,0.22) 0%, rgba(249,115,22,0.08) 100%);
   border: 1px solid rgba(249,115,22,0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.ach-earned::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg,
+    transparent 35%,
+    rgba(249,115,22,0.18) 50%,
+    transparent 65%);
+  background-size: 200% 100%;
+  animation: shimmer 3.5s infinite;
+  pointer-events: none;
 }
 
 /* Locked */
@@ -4279,8 +4366,9 @@ select.ex-form-input { appearance: none; cursor: pointer; }
 .db-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  padding: 1.1rem 1.15rem;
+  border-radius: var(--r-card);
+  padding: 1.25rem 1.35rem;
+  box-shadow: var(--shadow-card);
 }
 
 .db-card-header {
@@ -4368,34 +4456,39 @@ select.ex-form-input { appearance: none; cursor: pointer; }
 .db-week-abbr.today { color: var(--accent); }
 
 .db-week-dot {
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   background: var(--surface-2);
-  border: 1.5px solid var(--border);
+  border: 1.5px solid rgba(45,49,71,0.5);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-dim);
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 
 .db-week-dot.trained {
-  background: var(--accent);
+  background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
   border-color: var(--accent);
   color: #fff;
+  box-shadow: 0 2px 8px rgba(249,115,22,0.4);
 }
 
 .db-week-dot.today {
-  border-color: var(--accent);
+  border: 2.5px solid var(--accent);
   color: var(--accent);
+  font-weight: 700;
+  box-shadow: 0 0 0 3px var(--accent-dim);
 }
 
 .db-week-dot.trained.today {
-  background: var(--accent);
+  background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+  border-color: var(--accent);
   color: #fff;
-  box-shadow: 0 0 0 3px var(--accent-dim);
+  box-shadow: 0 0 0 3px var(--accent-dim), 0 2px 8px rgba(249,115,22,0.4);
 }
 
 /* Next workout card */
@@ -4612,3 +4705,92 @@ select.ex-form-input { appearance: none; cursor: pointer; }
   border-color: rgba(248,113,113,0.4);
   background: rgba(248,113,113,0.08);
 }
+
+/* ── Custom scrollbar (webkit) ────────────────────────────────────────────── */
+::-webkit-scrollbar               { width: 5px; height: 5px; }
+::-webkit-scrollbar-track         { background: transparent; }
+::-webkit-scrollbar-thumb         { background: rgba(249,115,22,0.35); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover   { background: rgba(249,115,22,0.55); }
+
+/* ── Shimmer keyframe ─────────────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+/* ── Tarjetas de progreso — variante con icono ────────────────────────────── */
+.pg-card {
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-card);
+}
+
+.pg-card-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+  margin-bottom: 0.1rem;
+}
+
+.pg-card-empty-hint {
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  line-height: 1.35;
+  margin-top: 0.25rem;
+}
+
+/* ── Historial: stat cards ────────────────────────────────────────────────── */
+.hist-stat {
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── Plan day card ────────────────────────────────────────────────────────── */
+.plan-day-card {
+  box-shadow: var(--shadow-card);
+  border-radius: var(--r-card);
+}
+
+.plan-day-header {
+  padding: 1rem 1.25rem;
+}
+
+.plan-day-letter {
+  width: 36px;
+  height: 36px;
+}
+
+/* ── View wrapper & header — más respiración ──────────────────────────────── */
+.view-wrapper { gap: 1.25rem; }
+
+.view-header  { gap: 0.35rem; }
+
+.view-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+/* ── Ghost + sm buttons — mejora general ─────────────────────────────────── */
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+.btn-ghost:hover:not(:disabled) {
+  border-color: var(--text-muted);
+  color: var(--text);
+  background: rgba(255,255,255,0.04);
+}
+
+.btn-sm {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8rem;
+  border-radius: var(--r-md);
+}
+
+/* ── Consistencia border-radius tarjetas ─────────────────────────────────── */
+.db-card,
+.myplan-card,
+.plan-day-card,
+.hist-streak-card,
+.hist-stat,
+.pg-card,
+.ach-card    { border-radius: var(--r-card); }
