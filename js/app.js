@@ -196,8 +196,95 @@ function renderStep2() {
   app.querySelectorAll('.day-option').forEach(btn => {
     btn.addEventListener('click', () => {
       state.setDays(Number(btn.dataset.days));
-      navigate(3);
+      renderStep2b();
     });
+  });
+}
+
+// ── Step 2b — Asignación de días de la semana ──────────────────────────────────
+const WEEKDAY_OPTS = [
+  { key: 'monday',    label: 'Lunes' },
+  { key: 'tuesday',   label: 'Martes' },
+  { key: 'wednesday', label: 'Miércoles' },
+  { key: 'thursday',  label: 'Jueves' },
+  { key: 'friday',    label: 'Viernes' },
+  { key: 'saturday',  label: 'Sábado' },
+  { key: 'sunday',    label: 'Domingo' },
+];
+
+const WD_DEFAULTS = {
+  2: ['monday', 'thursday'],
+  3: ['monday', 'wednesday', 'friday'],
+  4: ['monday', 'tuesday', 'thursday', 'friday'],
+  5: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+  6: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
+};
+
+function renderStep2b() {
+  updateProgressBar(2);
+  const days     = SPLITS[state.days].days;
+  const current  = state.weekDays || {};
+  const defaults = WD_DEFAULTS[state.days] || [];
+
+  const rowsHtml = days.map((day, i) => {
+    const letter = String.fromCharCode(65 + i);
+    const curVal = current[day.label] || defaults[i] || 'monday';
+    const opts   = WEEKDAY_OPTS.map(w =>
+      `<option value="${w.key}"${curVal === w.key ? ' selected' : ''}>${w.label}</option>`
+    ).join('');
+    return `
+      <div class="wd-row">
+        <div class="wd-day-info">
+          <span class="wd-day-letter">${letter}</span>
+          <span class="wd-day-label">${day.label}</span>
+        </div>
+        <select class="wd-select" data-label="${day.label}">${opts}</select>
+      </div>`;
+  }).join('');
+
+  app.innerHTML = `
+    <div class="view-wrapper">
+      <div class="view-header">
+        <button class="btn-back" id="btn-back" type="button">← Atrás</button>
+        <div>
+          <h2 class="view-title">Asigna los días</h2>
+          <p class="view-subtitle">¿Qué día harás cada entrenamiento?</p>
+        </div>
+      </div>
+      <p id="wd-warning" class="wd-warning hidden">Dos entrenamientos tienen el mismo día asignado</p>
+      <div class="wd-rows">${rowsHtml}</div>
+      <div class="step-footer wd-footer">
+        <button class="btn btn-ghost" id="btn-skip-wd" type="button">Saltar</button>
+        <button class="btn btn-primary" id="btn-confirm-wd" type="button">Confirmar →</button>
+      </div>
+    </div>`;
+
+  document.getElementById('btn-back').addEventListener('click', () => navigate(2));
+
+  document.getElementById('btn-skip-wd').addEventListener('click', () => {
+    state.setWeekDays(null);
+    navigate(3);
+  });
+
+  document.getElementById('btn-confirm-wd').addEventListener('click', () => {
+    const weekDays = {};
+    app.querySelectorAll('.wd-select').forEach(sel => {
+      weekDays[sel.dataset.label] = sel.value;
+    });
+    const vals   = Object.values(weekDays);
+    const unique = new Set(vals);
+    if (unique.size !== vals.length) {
+      document.getElementById('wd-warning').classList.remove('hidden');
+      return;
+    }
+    state.setWeekDays(weekDays);
+    navigate(3);
+  });
+
+  app.querySelectorAll('.wd-select').forEach(sel => {
+    sel.addEventListener('change', () =>
+      document.getElementById('wd-warning')?.classList.add('hidden')
+    );
   });
 }
 
@@ -682,6 +769,7 @@ function handleSavePlan() {
     name:        `${GOALS[state.goal].label} · ${state.days} días`,
     generatedAt: new Date().toISOString(),
     plan:        buildPlan(),
+    weekDays:    state.weekDays || null,
   };
   savePlan(plan);
   checkAchievements();

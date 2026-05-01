@@ -32,16 +32,18 @@ export const authAPI = {
 };
 
 export const plansAPI = {
-  getAll: () => apiRequest('/plans'),
-  create: (name, goal, days, data) => apiRequest('/plans', {
+  getAll:    () => apiRequest('/plans'),
+  getActive: () => apiRequest('/plans/active'),
+  create: (name, goal, days, data, weekDays) => apiRequest('/plans', {
     method: 'POST',
-    body: JSON.stringify({ name, goal, days, data }),
+    body: JSON.stringify({ name, goal, days, data, week_days: weekDays || null }),
   }),
-  update: (id, name, goal, days, data) => apiRequest(`/plans/${id}`, {
+  update: (id, name, goal, days, data, weekDays) => apiRequest(`/plans/${id}`, {
     method: 'PUT',
-    body: JSON.stringify({ name, goal, days, data }),
+    body: JSON.stringify({ name, goal, days, data, week_days: weekDays || null }),
   }),
-  remove: (id) => apiRequest(`/plans/${id}`, { method: 'DELETE' }),
+  activate: (id) => apiRequest(`/plans/${id}/activate`, { method: 'PUT' }),
+  remove:   (id) => apiRequest(`/plans/${id}`, { method: 'DELETE' }),
 };
 
 export const sessionsAPI = {

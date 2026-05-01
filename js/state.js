@@ -1,8 +1,9 @@
 import { MUSCLE_GROUPS, SPLITS } from './data.js';
 
 export const state = {
-  goal: null,   // 'muscle' | 'fat' | 'strength'
-  days: null,   // 2 | 3 | 4 | 5 | 6
+  goal:     null,   // 'muscle' | 'fat' | 'strength'
+  days:     null,   // 2 | 3 | 4 | 5 | 6
+  weekDays: null,   // { [dayLabel]: 'monday' | 'tuesday' | ... } | null
 
   // { muscleGroupId: Set<exerciseId> }
   selectedExercises: {},
@@ -26,8 +27,13 @@ export const state = {
   setDays(days) {
     if (this.days !== days) {
       this.days = days;
-      this._initDays = null;      // force re-init when entering step 3
+      this._initDays = null;
+      this.weekDays  = null;      // reset weekday assignment when days change
     }
+  },
+
+  setWeekDays(weekDays) {
+    this.weekDays = weekDays;
   },
 
   // Pre-select exercises per muscle group based on how many groups share that session.

@@ -105,3 +105,7 @@ CREATE TABLE IF NOT EXISTS achievements (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   UNIQUE KEY unique_user_achievement (user_id, achievement_id)
 );
+
+-- Run these on existing databases to add plan features:
+-- ALTER TABLE plans ADD COLUMN week_days JSON DEFAULT NULL;
+-- ALTER TABLE plans ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT FALSE;

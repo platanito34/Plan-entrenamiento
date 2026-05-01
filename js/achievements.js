@@ -63,10 +63,64 @@ function calcStreak(history) {
   return streak;
 }
 
+// Weekday name → JS getDay() value (0 = Sunday)
+const WEEKDAY_NUM = {
+  monday: 1, tuesday: 2, wednesday: 3, thursday: 4,
+  friday: 5, saturday: 6, sunday: 0,
+};
+
+function getActivePlan() {
+  try {
+    const activeId = localStorage.getItem('gym-active-plan-id');
+    if (!activeId) return null;
+    const plans = JSON.parse(localStorage.getItem(PLANS_KEY) || '[]');
+    if (!Array.isArray(plans)) return null;
+    return plans.find(p => String(p.apiId) === String(activeId) || p.id === String(activeId)) ?? null;
+  } catch { return null; }
+}
+
+// Streak that only counts assigned training days; skipping rest days is allowed.
+// A missed assigned day (in the past) breaks the streak.
+// Today's assigned workout not yet done does NOT break it.
+function calcSmartStreak(history, weekDays) {
+  const assignedDow = new Set(
+    Object.values(weekDays).map(d => WEEKDAY_NUM[d]).filter(n => n !== undefined)
+  );
+  if (assignedDow.size === 0) return calcStreak(history);
+
+  const trainedKeys = new Set(history.map(s => s.date.slice(0, 10)));
+  let streak = 0;
+  const d = new Date();
+  const todayKey = dateKey(d);
+
+  for (let i = 0; i < 730; i++) {
+    const key = dateKey(d);
+    const dow = d.getDay();
+    if (assignedDow.has(dow)) {
+      if (trainedKeys.has(key)) {
+        streak++;
+      } else if (key !== todayKey) {
+        break; // missed assigned day in the past → streak ends
+      }
+      // today assigned but not trained yet → skip without breaking
+    }
+    d.setDate(d.getDate() - 1);
+  }
+  return streak;
+}
+
+export function calcCurrentStreak(history) {
+  const activePlan = getActivePlan();
+  if (activePlan?.weekDays && Object.keys(activePlan.weekDays).length > 0) {
+    return calcSmartStreak(history, activePlan.weekDays);
+  }
+  return calcStreak(history);
+}
+
 export function getCurrentStreak() {
   try {
     const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-    return Array.isArray(history) ? calcStreak(history) : 0;
+    return Array.isArray(history) ? calcCurrentStreak(history) : 0;
   } catch { return 0; }
 }
 
@@ -123,7 +177,7 @@ export function checkAchievements() {
     }
   }
 
-  const streak     = calcStreak(history);
+  const streak     = calcCurrentStreak(history);
   const uniqueDays = new Set(history.map(s => s.date.slice(0, 10))).size;
   const planDays   = plans.length > 0 ? (plans[plans.length - 1].days || 5) : 5;
 

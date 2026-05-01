@@ -4,8 +4,19 @@ import { saveSession, loadHistory }              from './history.js';
 import { checkAchievements, refreshSideNavStreak } from './achievements.js';
 import { plansAPI }                              from './api.js';
 
-const PLANS_KEY    = 'gym-plans';
-const MIGRATED_KEY = '_gym_migrated';
+const PLANS_KEY      = 'gym-plans';
+const MIGRATED_KEY   = '_gym_migrated';
+const ACTIVE_PLAN_KEY = 'gym-active-plan-id';
+
+// ── Active plan helpers ────────────────────────────────────────────────────────
+export function getActivePlanId() {
+  return localStorage.getItem(ACTIVE_PLAN_KEY);
+}
+
+function setActivePlanId(id) {
+  if (id != null) localStorage.setItem(ACTIVE_PLAN_KEY, String(id));
+  else localStorage.removeItem(ACTIVE_PLAN_KEY);
+}
 
 // ── API normalization ──────────────────────────────────────────────────────────
 function normalizePlanFromAPI(p) {
@@ -17,6 +28,8 @@ function normalizePlanFromAPI(p) {
     days:        p.days,
     plan:        p.data,
     generatedAt: p.created_at,
+    weekDays:    p.week_days || null,
+    isActive:    !!p.is_active,
   };
 }
 
@@ -26,6 +39,8 @@ async function syncPlansFromAPI() {
     const apiPlans = await plansAPI.getAll();
     const plans = apiPlans.map(normalizePlanFromAPI);
     localStorage.setItem(PLANS_KEY, JSON.stringify(plans));
+    const activePlan = plans.find(p => p.isActive);
+    setActivePlanId(activePlan?.apiId ?? null);
     return plans;
   } catch (err) {
     console.warn('[plans] API sync failed:', err);
@@ -70,7 +85,7 @@ export function savePlan(plan) {
   plans.unshift(plan);
   localStorage.setItem(PLANS_KEY, JSON.stringify(plans));
 
-  plansAPI.create(plan.name, plan.goal, plan.days, plan.plan)
+  plansAPI.create(plan.name, plan.goal, plan.days, plan.plan, plan.weekDays)
     .then(result => {
       const current = loadPlans();
       const idx = current.findIndex(p => p.id === plan.id);
@@ -83,9 +98,13 @@ export function savePlan(plan) {
 }
 
 export function deletePlan(id) {
-  const plans = loadPlans();
+  const plans  = loadPlans();
   const target = plans.find(p => p.id === id);
   localStorage.setItem(PLANS_KEY, JSON.stringify(plans.filter(p => p.id !== id)));
+
+  if (target?.apiId && String(target.apiId) === String(getActivePlanId())) {
+    setActivePlanId(null);
+  }
 
   if (target?.apiId) {
     plansAPI.remove(target.apiId)
@@ -102,7 +121,7 @@ export function updatePlan(updatedPlan) {
 
     const apiId = updatedPlan.apiId;
     if (apiId) {
-      plansAPI.update(apiId, updatedPlan.name, updatedPlan.goal, updatedPlan.days, updatedPlan.plan)
+      plansAPI.update(apiId, updatedPlan.name, updatedPlan.goal, updatedPlan.days, updatedPlan.plan, updatedPlan.weekDays)
         .catch(err => console.warn('[plans] PUT failed:', err));
     }
   }
@@ -121,7 +140,7 @@ function daysAgo(isoDate) {
   return `hace ${diff} días`;
 }
 
-// ── Smooth panel toggle (used for quick-log panel) ────────────────────────────
+// ── Smooth panel toggle ────────────────────────────────────────────────────────
 function togglePanel(el, open) {
   if (open === el.classList.contains('open')) return;
   if (open) {
@@ -145,6 +164,24 @@ function togglePanel(el, open) {
       el.classList.remove('open');
     }, { once: true });
   }
+}
+
+// ── Weekday label helper ───────────────────────────────────────────────────────
+const WEEKDAY_LABELS = {
+  monday: 'L', tuesday: 'M', wednesday: 'X',
+  thursday: 'J', friday: 'V', saturday: 'S', sunday: 'D',
+};
+const WEEKDAY_FULL = {
+  monday: 'Lunes', tuesday: 'Martes', wednesday: 'Miércoles',
+  thursday: 'Jueves', friday: 'Viernes', saturday: 'Sábado', sunday: 'Domingo',
+};
+
+function buildWeekDaysBadges(weekDays) {
+  if (!weekDays) return '';
+  const badges = Object.entries(weekDays).map(([label, day]) =>
+    `<span class="myplan-wd-badge" title="${label}">${WEEKDAY_LABELS[day] ?? day}</span>`
+  ).join('');
+  return `<div class="myplan-wd-row">${badges}</div>`;
 }
 
 // ── Page renderer ──────────────────────────────────────────────────────────────
@@ -178,7 +215,11 @@ export async function renderPlansPage() {
     return;
   }
 
+  const activePlanId = getActivePlanId();
+
   const cardsHtml = plans.map((plan, i) => {
+    const isActive = plan.apiId && String(plan.apiId) === String(activePlanId);
+
     const daysHtml = plan.plan.map(d => `
       <li class="myplan-day">
         <span class="myplan-day-letter">${d.letter}</span>
@@ -190,20 +231,28 @@ export async function renderPlansPage() {
       ? `<p class="myplan-last-session">Último entreno: ${lastSession.dayLabel} · ${daysAgo(lastSession.date)}</p>`
       : '';
 
+    const weekDaysHtml = buildWeekDaysBadges(plan.weekDays);
+
     const dayOptions = plan.plan.map(d =>
       `<option value="${d.label}">${d.letter} · ${d.label}</option>`
     ).join('');
 
     return `
-      <div class="myplan-card stagger-item" style="animation-delay:${i * 60}ms">
+      <div class="myplan-card stagger-item${isActive ? ' myplan-card--active' : ''}" style="animation-delay:${i * 60}ms">
         <div class="myplan-header">
-          <p class="myplan-name">${plan.name}</p>
-          <p class="myplan-date">${formatDate(plan.generatedAt)}</p>
+          <div class="myplan-header-left">
+            <p class="myplan-name">${plan.name}${isActive ? '<span class="myplan-active-badge">ACTIVO</span>' : ''}</p>
+            <p class="myplan-date">${formatDate(plan.generatedAt)}</p>
+          </div>
         </div>
+        ${weekDaysHtml}
         <ul class="myplan-days">${daysHtml}</ul>
         ${lastSessHtml}
         <div class="myplan-actions">
           <button class="btn btn-primary" data-action="start"   data-id="${plan.id}" type="button">Empezar sesión</button>
+          <button class="btn ${isActive ? 'btn-plan-active' : 'btn-ghost btn-sm'}" data-action="activate" data-id="${plan.id}" type="button" ${isActive ? 'disabled' : ''}>
+            ${isActive ? '✓ Plan activo' : 'Activar'}
+          </button>
           <button class="btn btn-ghost btn-sm" data-action="weights" data-id="${plan.id}" type="button">Pesos</button>
           <button class="btn btn-ghost btn-sm" data-action="edit"    data-id="${plan.id}" type="button">Editar</button>
           <button class="btn btn-ghost btn-sm" data-action="delete"  data-id="${plan.id}" type="button">Eliminar</button>
@@ -256,6 +305,18 @@ export async function renderPlansPage() {
     btn.addEventListener('click', () => {
       const plan = plans.find(p => p.id === btn.dataset.id);
       if (plan) goToPage('session', plan);
+    });
+  });
+
+  app.querySelectorAll('[data-action="activate"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const plan = plans.find(p => p.id === btn.dataset.id);
+      if (!plan || btn.disabled) return;
+      setActivePlanId(plan.apiId);
+      if (plan.apiId) {
+        plansAPI.activate(plan.apiId).catch(err => console.warn('[plans] activate failed:', err));
+      }
+      renderPlansPage();
     });
   });
 

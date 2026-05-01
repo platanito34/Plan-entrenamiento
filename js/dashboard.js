@@ -1,9 +1,10 @@
 // ── Dashboard page ─────────────────────────────────────────────────────────────
-import { goToPage }            from './router.js';
-import { plansAPI, sessionsAPI, weightsAPI } from './api.js';
-import { loadPlans }           from './plans.js';
-import { loadHistory }         from './history.js';
-import { loadWeights }         from './weights.js';
+import { goToPage }                              from './router.js';
+import { plansAPI, sessionsAPI, weightsAPI }     from './api.js';
+import { loadPlans }                             from './plans.js';
+import { loadHistory }                           from './history.js';
+import { loadWeights }                           from './weights.js';
+import { calcCurrentStreak }                     from './achievements.js';
 
 // ── Data sync ──────────────────────────────────────────────────────────────────
 async function syncDashboardData() {
@@ -17,8 +18,12 @@ async function syncDashboardData() {
     const plans = plansRes.value.map(p => ({
       id: String(p.id), apiId: p.id, name: p.name,
       goal: p.goal, days: p.days, plan: p.data, generatedAt: p.created_at,
+      weekDays: p.week_days || null, isActive: !!p.is_active,
     }));
     localStorage.setItem('gym-plans', JSON.stringify(plans));
+    const activePlan = plans.find(p => p.isActive);
+    if (activePlan) localStorage.setItem('gym-active-plan-id', String(activePlan.apiId));
+    else localStorage.removeItem('gym-active-plan-id');
   }
 
   if (sessionsRes.status === 'fulfilled') {
@@ -57,14 +62,6 @@ function dateKey(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function calcStreak(history) {
-  const trained = new Set(history.map(s => s.date.slice(0, 10)));
-  let streak = 0;
-  const d = new Date();
-  while (trained.has(dateKey(d))) { streak++; d.setDate(d.getDate() - 1); }
-  return streak;
-}
-
 function getWeekDays() {
   const today  = new Date();
   const monday = new Date(today);
@@ -72,7 +69,7 @@ function getWeekDays() {
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
-    return { key: dateKey(d), day: d.getDate(), abbr: ['L','M','X','J','V','S','D'][i] };
+    return { key: dateKey(d), day: d.getDate(), abbr: ['L','M','X','J','V','S','D'][i], dow: d.getDay() };
   });
 }
 
@@ -108,6 +105,22 @@ function fmtDate(iso) {
       day: 'numeric', month: 'short',
     });
   } catch { return iso; }
+}
+
+// Returns a Set of JS getDay() values for the active plan's assigned weekdays
+const WEEKDAY_NUM = {
+  monday: 1, tuesday: 2, wednesday: 3, thursday: 4,
+  friday: 5, saturday: 6, sunday: 0,
+};
+
+function getAssignedDow(plans) {
+  const activeId = localStorage.getItem('gym-active-plan-id');
+  if (!activeId) return new Set();
+  const activePlan = plans.find(p => String(p.apiId) === String(activeId) || p.id === String(activeId));
+  if (!activePlan?.weekDays) return new Set();
+  return new Set(
+    Object.values(activePlan.weekDays).map(d => WEEKDAY_NUM[d]).filter(n => n !== undefined)
+  );
 }
 
 // ── Sections ───────────────────────────────────────────────────────────────────
@@ -148,19 +161,28 @@ function buildStreakCard(streak) {
     </div>`;
 }
 
-function buildWeekBar(history) {
-  const weekDays = getWeekDays();
-  const trained  = new Set(history.map(s => s.date.slice(0, 10)));
-  const todayKey = dateKey(new Date());
-  const count    = weekDays.filter(d => trained.has(d.key)).length;
+function buildWeekBar(history, plans) {
+  const weekDays    = getWeekDays();
+  const trained     = new Set(history.map(s => s.date.slice(0, 10)));
+  const todayKey    = dateKey(new Date());
+  const count       = weekDays.filter(d => trained.has(d.key)).length;
+  const assignedDow = getAssignedDow(plans);
 
   const cells = weekDays.map(d => {
-    const done    = trained.has(d.key);
-    const isToday = d.key === todayKey;
+    const done       = trained.has(d.key);
+    const isToday    = d.key === todayKey;
+    const isAssigned = assignedDow.has(d.dow);
+    const dotClass   = [
+      'db-week-dot',
+      done                     ? 'trained'  : '',
+      isToday                  ? 'today'    : '',
+      isAssigned && !done      ? 'assigned' : '',
+    ].filter(Boolean).join(' ');
+
     return `
       <div class="db-week-cell">
         <span class="db-week-abbr${isToday ? ' today' : ''}">${d.abbr}</span>
-        <span class="db-week-dot${done ? ' trained' : ''}${isToday ? ' today' : ''}">${d.day}</span>
+        <span class="${dotClass}">${d.day}</span>
       </div>`;
   }).join('');
 
@@ -264,7 +286,6 @@ function buildQuickActions(hasPlans) {
 export async function renderDashboardPage() {
   const app = document.getElementById('app');
 
-  // Show skeleton while data loads
   const user = JSON.parse(localStorage.getItem('gymapp_user') || '{}');
   const userName = user.nombre || 'atleta';
   app.innerHTML = `
@@ -273,14 +294,13 @@ export async function renderDashboardPage() {
       <div class="loading-spinner-wrap"><div class="loading-spinner"></div></div>
     </div>`;
 
-  // Sync all data sources in parallel
   await syncDashboardData();
 
   const plans   = loadPlans();
   const history = loadHistory();
   const weights = loadWeights();
 
-  const streak     = calcStreak(history);
+  const streak     = calcCurrentStreak(history);
   const suggestion = suggestNextWorkout(plans, history);
   const recentPRs  = getRecentPRs(weights);
 
@@ -288,7 +308,7 @@ export async function renderDashboardPage() {
     <div class="view-wrapper db-wrapper">
       ${buildGreeting(userName)}
       ${buildStreakCard(streak)}
-      ${buildWeekBar(history)}
+      ${buildWeekBar(history, plans)}
       ${buildNextWorkout(suggestion)}
       ${buildRecentPRs(recentPRs)}
       ${buildQuickActions(plans.length > 0)}
