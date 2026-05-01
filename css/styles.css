@@ -4601,3 +4601,14 @@ select.ex-form-input { appearance: none; cursor: pointer; }
   color: var(--accent);
   font-weight: 600;
 }
+
+/* ── Desactivar plan button ────────────────────────────────────────────────── */
+.btn-deactivate {
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+.btn-deactivate:hover {
+  color: #f87171;
+  border-color: rgba(248,113,113,0.4);
+  background: rgba(248,113,113,0.08);
+}

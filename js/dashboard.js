@@ -22,7 +22,7 @@ async function syncDashboardData() {
     }));
     localStorage.setItem('gym-plans', JSON.stringify(plans));
     const activePlan = plans.find(p => p.isActive);
-    if (activePlan) localStorage.setItem('gym-active-plan-id', String(activePlan.apiId));
+    if (activePlan) localStorage.setItem('gym-active-plan-id', activePlan.id);
     else localStorage.removeItem('gym-active-plan-id');
   }
 
@@ -116,7 +116,7 @@ const WEEKDAY_NUM = {
 function getAssignedDow(plans) {
   const activeId = localStorage.getItem('gym-active-plan-id');
   if (!activeId) return new Set();
-  const activePlan = plans.find(p => String(p.apiId) === String(activeId) || p.id === String(activeId));
+  const activePlan = plans.find(p => p.id === activeId);
   if (!activePlan?.weekDays) return new Set();
   return new Set(
     Object.values(activePlan.weekDays).map(d => WEEKDAY_NUM[d]).filter(n => n !== undefined)

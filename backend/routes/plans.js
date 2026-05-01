@@ -89,6 +89,21 @@ router.put('/:id/activate', async (req, res) => {
   }
 });
 
+// PUT /api/plans/:id/deactivate  — must be before /:id
+router.put('/:id/deactivate', async (req, res) => {
+  try {
+    const [result] = await pool.execute(
+      'UPDATE plans SET is_active = 0 WHERE id = ? AND user_id = ?',
+      [req.params.id, req.user.id]
+    );
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'Plan no encontrado.' });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('PUT /api/plans/:id/deactivate:', err.message);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
 // PUT /api/plans/:id
 router.put('/:id', async (req, res) => {
   const { name, goal, days, data, week_days } = req.body;

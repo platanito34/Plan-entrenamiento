@@ -40,7 +40,7 @@ async function syncPlansFromAPI() {
     const plans = apiPlans.map(normalizePlanFromAPI);
     localStorage.setItem(PLANS_KEY, JSON.stringify(plans));
     const activePlan = plans.find(p => p.isActive);
-    setActivePlanId(activePlan?.apiId ?? null);
+    setActivePlanId(activePlan?.id ?? null);   // store local string ID
     return plans;
   } catch (err) {
     console.warn('[plans] API sync failed:', err);
@@ -102,7 +102,7 @@ export function deletePlan(id) {
   const target = plans.find(p => p.id === id);
   localStorage.setItem(PLANS_KEY, JSON.stringify(plans.filter(p => p.id !== id)));
 
-  if (target?.apiId && String(target.apiId) === String(getActivePlanId())) {
+  if (target?.id === getActivePlanId()) {
     setActivePlanId(null);
   }
 
@@ -215,10 +215,10 @@ export async function renderPlansPage() {
     return;
   }
 
-  const activePlanId = getActivePlanId();
+  const activePlanId = getActivePlanId();   // local string ID (e.g. '1m2n3o4p')
 
   const cardsHtml = plans.map((plan, i) => {
-    const isActive = plan.apiId && String(plan.apiId) === String(activePlanId);
+    const isActive = plan.id === activePlanId;
 
     const daysHtml = plan.plan.map(d => `
       <li class="myplan-day">
@@ -249,10 +249,11 @@ export async function renderPlansPage() {
         <ul class="myplan-days">${daysHtml}</ul>
         ${lastSessHtml}
         <div class="myplan-actions">
-          <button class="btn btn-primary" data-action="start"   data-id="${plan.id}" type="button">Empezar sesión</button>
-          <button class="btn ${isActive ? 'btn-plan-active' : 'btn-ghost btn-sm'}" data-action="activate" data-id="${plan.id}" type="button" ${isActive ? 'disabled' : ''}>
-            ${isActive ? '✓ Plan activo' : 'Activar'}
-          </button>
+          <button class="btn btn-primary" data-action="start" data-id="${plan.id}" type="button">Empezar sesión</button>
+          ${isActive
+            ? `<button class="btn btn-ghost btn-sm btn-deactivate" data-action="deactivate" data-id="${plan.id}" type="button">Desactivar</button>`
+            : `<button class="btn btn-ghost btn-sm" data-action="activate" data-id="${plan.id}" type="button">Activar</button>`
+          }
           <button class="btn btn-ghost btn-sm" data-action="weights" data-id="${plan.id}" type="button">Pesos</button>
           <button class="btn btn-ghost btn-sm" data-action="edit"    data-id="${plan.id}" type="button">Editar</button>
           <button class="btn btn-ghost btn-sm" data-action="delete"  data-id="${plan.id}" type="button">Eliminar</button>
@@ -311,10 +312,22 @@ export async function renderPlansPage() {
   app.querySelectorAll('[data-action="activate"]').forEach(btn => {
     btn.addEventListener('click', () => {
       const plan = plans.find(p => p.id === btn.dataset.id);
-      if (!plan || btn.disabled) return;
-      setActivePlanId(plan.apiId);
+      if (!plan) return;
+      setActivePlanId(plan.id);
       if (plan.apiId) {
         plansAPI.activate(plan.apiId).catch(err => console.warn('[plans] activate failed:', err));
+      }
+      renderPlansPage();
+    });
+  });
+
+  app.querySelectorAll('[data-action="deactivate"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const plan = plans.find(p => p.id === btn.dataset.id);
+      if (!plan) return;
+      setActivePlanId(null);
+      if (plan.apiId) {
+        plansAPI.deactivate(plan.apiId).catch(err => console.warn('[plans] deactivate failed:', err));
       }
       renderPlansPage();
     });

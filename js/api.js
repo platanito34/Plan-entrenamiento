@@ -42,8 +42,9 @@ export const plansAPI = {
     method: 'PUT',
     body: JSON.stringify({ name, goal, days, data, week_days: weekDays || null }),
   }),
-  activate: (id) => apiRequest(`/plans/${id}/activate`, { method: 'PUT' }),
-  remove:   (id) => apiRequest(`/plans/${id}`, { method: 'DELETE' }),
+  activate:   (id) => apiRequest(`/plans/${id}/activate`,   { method: 'PUT' }),
+  deactivate: (id) => apiRequest(`/plans/${id}/deactivate`, { method: 'PUT' }),
+  remove:     (id) => apiRequest(`/plans/${id}`, { method: 'DELETE' }),
 };
 
 export const sessionsAPI = {

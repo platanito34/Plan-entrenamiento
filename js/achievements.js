@@ -75,7 +75,7 @@ function getActivePlan() {
     if (!activeId) return null;
     const plans = JSON.parse(localStorage.getItem(PLANS_KEY) || '[]');
     if (!Array.isArray(plans)) return null;
-    return plans.find(p => String(p.apiId) === String(activeId) || p.id === String(activeId)) ?? null;
+    return plans.find(p => p.id === activeId) ?? null;
   } catch { return null; }
 }
 
